@@ -683,5 +683,30 @@
             .catch(err => console.warn('⚠️ فشل تسجيل Service Worker:', err));
     }
 </script>
+
+<!-- ===== نظام الأيقونات الاحتياطية (مضاف في النهاية) ===== -->
+<script>
+(function() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkFontAwesome);
+    } else {
+        checkFontAwesome();
+    }
+    function checkFontAwesome() {
+        var testIcon = document.createElement('i');
+        testIcon.className = 'fas fa-home';
+        testIcon.style.cssText = 'position:absolute;visibility:hidden;';
+        document.body.appendChild(testIcon);
+        var afterFont = window.getComputedStyle(testIcon, ':before').content;
+        document.body.removeChild(testIcon);
+        if (!afterFont || afterFont === 'none' || afterFont === '') {
+            document.body.classList.add('no-fontawesome');
+            console.warn('⚠️ Font Awesome لم يتحمّل، تم تفعيل الأيقونات الاحتياطية');
+        } else {
+            console.log('✅ Font Awesome محمّل بنجاح');
+        }
+    }
+})();
+</script>
 </body>
 </html>

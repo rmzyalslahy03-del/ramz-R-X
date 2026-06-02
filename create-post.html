@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0-beta3/css/all.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="common.js"></script>
@@ -495,6 +496,30 @@
             .then(reg => console.log('✅ Service Worker مسجل:', reg.scope))
             .catch(err => console.warn('⚠️ فشل تسجيل Service Worker:', err));
     }
+</script>
+
+<script>
+(function() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkFontAwesome);
+    } else {
+        checkFontAwesome();
+    }
+    function checkFontAwesome() {
+        var testIcon = document.createElement('i');
+        testIcon.className = 'fas fa-home';
+        testIcon.style.cssText = 'position:absolute;visibility:hidden;';
+        document.body.appendChild(testIcon);
+        var afterFont = window.getComputedStyle(testIcon, ':before').content;
+        document.body.removeChild(testIcon);
+        if (!afterFont || afterFont === 'none' || afterFont === '') {
+            document.body.classList.add('no-fontawesome');
+            console.warn('⚠️ Font Awesome لم يتحمّل، تم تفعيل الأيقونات الاحتياطية');
+        } else {
+            console.log('✅ Font Awesome محمّل بنجاح');
+        }
+    }
+})();
 </script>
 </body>
 </html>

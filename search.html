@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0-beta3/css/all.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="common.js"></script>
@@ -46,11 +47,19 @@
         }
         .header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-primary); border-bottom: 1px solid var(--border); }
         .header h2 { flex: 1; font-size: 18px; }
-        .icon-btn { background: none; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; padding: 8px; border-radius: 50%; }
+        .icon-btn { background: none; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; padding: 8px; border-radius: 50%; transition: background 0.2s; }
+        .icon-btn:hover { background: var(--bg-input); }
         .search-bar {
             padding: 10px 16px;
             background: var(--bg-primary);
             border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
         }
         .search-input {
             width: 100%;
@@ -62,25 +71,83 @@
             font-family: 'Cairo', sans-serif;
             font-size: 14px;
             outline: none;
+            transition: border 0.2s;
         }
         .search-input:focus { border-color: var(--accent); }
+        .voice-btn, .share-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .voice-btn:hover, .share-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .voice-btn.listening {
+            background: var(--accent);
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 80, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 0, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 80, 0); }
+        }
         .results { max-width: 600px; margin: 0 auto; padding: 8px; }
-        .section-title { font-weight: 700; margin: 16px 0 8px; color: var(--text-secondary); font-size: 14px; }
+        .section-title { font-weight: 700; margin: 16px 0 8px; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 6px; }
         .user-item, .post-item {
             display: flex; align-items: center; gap: 12px; padding: 12px;
             background: var(--bg-card); border-radius: 12px; margin-bottom: 8px;
-            cursor: pointer; transition: background 0.2s; border: 1px solid var(--border);
+            cursor: pointer; transition: all 0.2s; border: 1px solid var(--border);
         }
-        .user-item:hover, .post-item:hover { background: var(--bg-input); }
-        .user-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--bg-input); }
+        .user-item:hover, .post-item:hover { background: var(--bg-input); transform: translateY(-2px); }
+        .user-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: var(--bg-input); }
         .user-info { flex: 1; }
-        .user-name { font-weight: 700; }
-        .user-username { font-size: 12px; color: var(--text-muted); }
-        .post-thumbnail { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: var(--bg-input); }
+        .user-name { font-weight: 700; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .user-username { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .user-stats { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: flex; gap: 12px; }
+        .post-thumbnail { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; background: var(--bg-input); }
         .post-content { flex: 1; }
-        .post-title { font-weight: 700; margin-bottom: 2px; }
-        .post-excerpt { font-size: 12px; color: var(--text-muted); }
+        .post-title { font-weight: 700; margin-bottom: 4px; font-size: 15px; }
+        .post-excerpt { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .post-meta { display: flex; gap: 12px; font-size: 11px; color: var(--text-muted); margin-top: 6px; flex-wrap: wrap; }
+        .post-meta i { margin-left: 3px; }
+        .post-category { background: var(--accent); color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; display: inline-block; }
         .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+        .history-section { margin-top: 8px; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+        .history-title { font-weight: 700; color: var(--text-secondary); font-size: 14px; }
+        .clear-history-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 13px; font-family: 'Cairo', sans-serif; }
+        .history-item {
+            display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+            background: var(--bg-card); border-radius: 12px; margin-bottom: 6px;
+            cursor: pointer; border: 1px solid var(--border); transition: background 0.2s;
+        }
+        .history-item:hover { background: var(--bg-input); }
+        .history-icon { color: var(--text-muted); font-size: 14px; width: 20px; text-align: center; }
+        .history-text { flex: 1; font-size: 14px; }
+        .history-time { font-size: 11px; color: var(--text-muted); }
+        .delete-history-item { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; font-size: 12px; }
+        .delete-history-item:hover { color: var(--accent); }
+        .ai-suggestions { margin-top: 16px; }
+        .ai-title { font-weight: 700; color: var(--accent); font-size: 13px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .ai-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .ai-chip {
+            background: var(--bg-card); border: 1px solid var(--border);
+            padding: 8px 14px; border-radius: 20px; cursor: pointer;
+            font-size: 13px; transition: 0.2s; color: var(--text-secondary);
+        }
+        .ai-chip:hover { border-color: var(--accent); color: var(--accent); }
         .bottom-footer {
             position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card);
             display: flex; justify-content: space-around; padding: 8px 0;
@@ -94,6 +161,11 @@
         .footer-button .icon { font-size: 22px; }
         .footer-button .label { font-size: 11px; font-weight: 600; }
         .footer-button.create-btn .icon { font-size: 28px; color: var(--accent); }
+        .toast-message {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 8px 16px;
+            border-radius: 24px; font-size: 13px; z-index: 200; white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -105,13 +177,26 @@
 </div>
 
 <div class="search-bar">
-    <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن مستخدمين أو منشورات..." autofocus>
+    <div class="search-input-wrapper">
+        <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن مستخدمين أو منشورات..." autofocus>
+    </div>
+    <button class="voice-btn" id="voiceBtn" title="بحث صوتي"><i class="fas fa-microphone"></i></button>
+    <button class="share-btn" id="shareBtn" title="مشاركة نتائج البحث"><i class="fas fa-share-alt"></i></button>
 </div>
 
 <div class="results" id="resultsContainer">
-    <div class="empty-state">
-        <i class="fas fa-search" style="font-size:40px;display:block;margin-bottom:10px;"></i>
-        <p>ابدأ بكتابة اسم المستخدم أو عنوان المنشور</p>
+    <div id="defaultContent">
+        <div class="history-section" id="historySection" style="display:none;">
+            <div class="history-header">
+                <span class="history-title"><i class="fas fa-history"></i> عمليات البحث السابقة</span>
+                <button class="clear-history-btn" onclick="clearSearchHistory()">مسح الكل</button>
+            </div>
+            <div id="historyList"></div>
+        </div>
+        <div class="ai-suggestions" id="aiSuggestions">
+            <div class="ai-title"><i class="fas fa-robot"></i> اقتراحات Ramz AI</div>
+            <div class="ai-chips" id="aiChips"></div>
+        </div>
     </div>
 </div>
 
@@ -124,51 +209,245 @@
 </div>
 
 <script>
+    // ================ إدارة سجل البحث ================
+    const STORAGE_KEY = 'ramz_search_history';
+    const MAX_HISTORY = 10;
+    const MAX_DAYS = 30;
     const searchInput = document.getElementById('searchInput');
     const resultsContainer = document.getElementById('resultsContainer');
+    const defaultContent = document.getElementById('defaultContent');
+    const historySection = document.getElementById('historySection');
+    const historyList = document.getElementById('historyList');
+    let isListening = false;
+    let recognition = null;
 
-    let searchTimeout;
-    searchInput.addEventListener('input', () => {
-        clearTimeout(searchTimeout);
-        const query = searchInput.value.trim();
-        if (query.length === 0) {
-            resultsContainer.innerHTML = `<div class="empty-state"><i class="fas fa-search" style="font-size:40px;display:block;margin-bottom:10px;"></i><p>ابدأ بكتابة اسم المستخدم أو عنوان المنشور</p></div>`;
+    // تهيئة Web Speech API
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'ar-SA';
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            searchInput.value = transcript;
+            performSearch(transcript, true); // حفظ السجل
+            updateURLWithQuery(transcript);
+        };
+        recognition.onerror = (event) => {
+            console.error('Voice error:', event.error);
+            showToast('لم نتمكن من سماعك، حاول مرة أخرى');
+            document.getElementById('voiceBtn').classList.remove('listening');
+            isListening = false;
+        };
+        recognition.onend = () => {
+            document.getElementById('voiceBtn').classList.remove('listening');
+            isListening = false;
+        };
+    } else {
+        document.getElementById('voiceBtn').style.opacity = '0.5';
+        document.getElementById('voiceBtn').title = 'البحث الصوتي غير مدعوم في متصفحك';
+    }
+
+    // زر البحث الصوتي
+    document.getElementById('voiceBtn').addEventListener('click', () => {
+        if (!recognition) {
+            showToast('المتصفح لا يدعم البحث الصوتي');
             return;
         }
-        searchTimeout = setTimeout(() => performSearch(query), 300);
+        if (isListening) {
+            recognition.stop();
+            return;
+        }
+        recognition.start();
+        document.getElementById('voiceBtn').classList.add('listening');
+        isListening = true;
     });
 
-    async function performSearch(query) {
-        resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-pulse"></i> جاري البحث...</div>';
+    // زر المشاركة
+    document.getElementById('shareBtn').addEventListener('click', async () => {
+        const currentUrl = window.location.href;
+        try {
+            await navigator.clipboard.writeText(currentUrl);
+            showToast('تم نسخ رابط البحث إلى الحافظة');
+        } catch (err) {
+            showToast('فشل نسخ الرابط');
+        }
+    });
+
+    function showToast(msg) {
+        let toast = document.querySelector('.toast-message');
+        if (toast) toast.remove();
+        toast = document.createElement('div');
+        toast.className = 'toast-message';
+        toast.innerText = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    function getSearchHistory() {
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        } catch (e) { return []; }
+    }
+
+    function saveSearchHistory(query, fromAutoLoad = false) {
+        if (!query.trim() || fromAutoLoad) return;
+        let history = getSearchHistory();
+        history = history.filter(item => item.query.toLowerCase() !== query.toLowerCase());
+        history.unshift({ query: query, timestamp: new Date().toISOString() });
+        history = history.slice(0, MAX_HISTORY);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - MAX_DAYS);
+        history = history.filter(item => new Date(item.timestamp) > cutoff);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+        renderSearchHistory();
+    }
+
+    function renderSearchHistory() {
+        const history = getSearchHistory();
+        if (history.length === 0) {
+            historySection.style.display = 'none';
+            return;
+        }
+        historySection.style.display = 'block';
+        historyList.innerHTML = history.map((item, index) => {
+            const date = new Date(item.timestamp);
+            const timeStr = date.toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' }) + ' ' +
+                           date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+            return `
+                <div class="history-item" onclick="searchFromHistory('${escapeHtml(item.query).replace(/'/g, "\\'")}')">
+                    <i class="fas fa-clock history-icon"></i>
+                    <span class="history-text">${escapeHtml(item.query)}</span>
+                    <span class="history-time">${timeStr}</span>
+                    <button class="delete-history-item" onclick="event.stopPropagation(); deleteHistoryItem(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    window.searchFromHistory = function(query) {
+        searchInput.value = query;
+        performSearch(query, true);
+        updateURLWithQuery(query);
+    };
+
+    window.deleteHistoryItem = function(index) {
+        let history = getSearchHistory();
+        history.splice(index, 1);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+        renderSearchHistory();
+    };
+
+    window.clearSearchHistory = function() {
+        if (confirm('هل أنت متأكد من مسح جميع عمليات البحث السابقة؟')) {
+            localStorage.removeItem(STORAGE_KEY);
+            renderSearchHistory();
+            showToast('تم مسح سجل البحث');
+        }
+    };
+
+    // اقتراحات AI
+    function renderAISuggestions() {
+        const history = getSearchHistory();
+        const suggestions = [];
+        const defaultSuggestions = ['تقنية', 'أدب', 'شعر', 'رسم', 'سفر', 'موسيقى', 'برمجة', 'كتب', 'تصوير', 'رياضة'];
+        if (history.length > 0) suggestions.push('🔁 ' + history[0].query);
+        if (history.length > 1) suggestions.push('📌 ' + history[1].query);
+        const shuffled = defaultSuggestions.sort(() => 0.5 - Math.random());
+        for (let i = 0; i < 5; i++) {
+            if (!suggestions.find(s => s.includes(shuffled[i]))) suggestions.push('💡 ' + shuffled[i]);
+        }
+        const chipsContainer = document.getElementById('aiChips');
+        chipsContainer.innerHTML = suggestions.map(s => {
+            const cleanQuery = s.replace(/^[^\s]+\s/, '');
+            return `<div class="ai-chip" onclick="searchFromHistory('${cleanQuery}')">${s}</div>`;
+        }).join('');
+    }
+
+    // تحديث الرابط مع الاستعلام
+    function updateURLWithQuery(query) {
+        const url = new URL(window.location);
+        if (query) url.searchParams.set('q', query);
+        else url.searchParams.delete('q');
+        window.history.pushState({}, '', url);
+    }
+
+    function getQueryFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('q');
+    }
+
+    // ================ البحث المتقدم مع بطاقات غنية ================
+    async function performSearch(query, saveToHistory = true, fromAutoLoad = false) {
+        if (!query.trim()) {
+            defaultContent.style.display = 'block';
+            const existingResults = resultsContainer.querySelector('.search-results');
+            if (existingResults) existingResults.remove();
+            renderSearchHistory();
+            renderAISuggestions();
+            return;
+        }
+        defaultContent.style.display = 'none';
+        let searchResults = resultsContainer.querySelector('.search-results');
+        if (!searchResults) {
+            searchResults = document.createElement('div');
+            searchResults.className = 'search-results';
+            resultsContainer.appendChild(searchResults);
+        }
+        searchResults.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-pulse"></i> جاري البحث...</div>';
 
         try {
-            const [usersRes, postsRes] = await Promise.all([
-                supabase.from('users').select('id, username, avatar, verified').ilike('username', `%${query}%`).limit(5),
-                supabase.from('posts').select('id, title, content, image, category').ilike('title', `%${query}%`).limit(5)
-            ]);
+            // جلب المستخدمين مع معلومات إضافية (مثل عدد المتابعين - سنفترض وجود جدول followers)
+            const { data: users, error: usersErr } = await supabase
+                .from('users')
+                .select('id, username, avatar, verified, bio, followers_count')
+                .ilike('username', `%${query}%`)
+                .limit(5);
 
-            const users = usersRes.data || [];
-            const posts = postsRes.data || [];
+            // جلب المنشورات مع معلومات غنية (إعجابات، تعليقات، تاريخ، صور، فئة)
+            const { data: posts, error: postsErr } = await supabase
+                .from('posts')
+                .select(`
+                    id, title, content, image, category, created_at,
+                    likes:likes(count), comments:comments(count)
+                `)
+                .ilike('title', `%${query}%`)
+                .limit(5);
 
-            if (users.length === 0 && posts.length === 0) {
-                resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>لا توجد نتائج</p></div>';
+            if ((usersErr && !users) || (postsErr && !posts)) {
+                searchResults.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>حدث خطأ أثناء البحث</p></div>';
+                return;
+            }
+
+            const usersList = users || [];
+            const postsList = posts || [];
+
+            if (usersList.length === 0 && postsList.length === 0) {
+                searchResults.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>لا توجد نتائج</p></div>';
                 return;
             }
 
             let html = '';
 
-            if (users.length > 0) {
-                html += '<div class="section-title">👤 المستخدمون</div>';
-                users.forEach(user => {
+            if (usersList.length > 0) {
+                html += '<div class="section-title"><i class="fas fa-users"></i> المستخدمون</div>';
+                usersList.forEach(user => {
+                    const followers = user.followers_count || 0;
                     html += `
                         <div class="user-item" onclick="window.location.href='public-profile.html?user=${user.id}'">
                             <img class="user-avatar" src="${user.avatar || 'https://randomuser.me/api/portraits/lego/5.jpg'}" alt="">
                             <div class="user-info">
                                 <div class="user-name">
-                                    ${user.verified ? '<i class="fas fa-check-circle" style="color:var(--accent-blue);font-size:12px;"></i> ' : ''}
+                                    ${user.verified ? '<i class="fas fa-check-circle" style="color:var(--accent-blue);font-size:12px;"></i>' : ''}
                                     ${escapeHtml(user.username)}
                                 </div>
                                 <div class="user-username">@${escapeHtml(user.username)}</div>
+                                <div class="user-stats"><i class="fas fa-user-friends"></i> ${followers} متابع</div>
+                                ${user.bio ? `<div style="font-size:11px;color:var(--text-muted);">${escapeHtml(user.bio.substring(0, 50))}</div>` : ''}
                             </div>
                             <i class="fas fa-chevron-left" style="color:var(--text-muted);"></i>
                         </div>
@@ -176,41 +455,104 @@
                 });
             }
 
-            if (posts.length > 0) {
-                html += '<div class="section-title">📝 المنشورات</div>';
-                posts.forEach(post => {
+            if (postsList.length > 0) {
+                html += '<div class="section-title"><i class="fas fa-newspaper"></i> المنشورات</div>';
+                for (const post of postsList) {
                     const firstImage = parseImages(post.image)[0] || '';
+                    const likesCount = post.likes?.[0]?.count || 0;
+                    const commentsCount = post.comments?.[0]?.count || 0;
+                    const date = new Date(post.created_at);
+                    const dateStr = date.toLocaleDateString('ar-SA', { year:'numeric', month:'short', day:'numeric' });
                     html += `
-                        <div class="post-item" onclick="window.location.href='home.html'">
-                            ${firstImage ? `<img class="post-thumbnail" src="${firstImage}" alt="">` : ''}
+                        <div class="post-item" onclick="window.location.href='post-details.html?id=${post.id}'">
+                            ${firstImage ? `<img class="post-thumbnail" src="${firstImage}" alt="" loading="lazy">` : '<div class="post-thumbnail" style="background:var(--accent); display:flex; align-items:center; justify-content:center;"><i class="fas fa-file-alt"></i></div>'}
                             <div class="post-content">
                                 <div class="post-title">${escapeHtml(post.title)}</div>
-                                <div class="post-excerpt">${escapeHtml(post.content?.substring(0, 80) || '')}</div>
-                                <div style="font-size:10px;color:var(--accent);">${post.category || 'عام'}</div>
+                                <div class="post-excerpt">${escapeHtml(post.content?.substring(0, 100) || '')}</div>
+                                <div class="post-meta">
+                                    <span><i class="far fa-heart"></i> ${likesCount}</span>
+                                    <span><i class="far fa-comment"></i> ${commentsCount}</span>
+                                    <span><i class="far fa-calendar-alt"></i> ${dateStr}</span>
+                                    ${post.category ? `<span class="post-category">${escapeHtml(post.category)}</span>` : ''}
+                                </div>
                             </div>
                         </div>
                     `;
-                });
+                }
             }
 
-            resultsContainer.innerHTML = html;
+            searchResults.innerHTML = html;
+            if (saveToHistory) saveSearchHistory(query, fromAutoLoad);
         } catch (err) {
             console.error(err);
-            resultsContainer.innerHTML = '<div class="empty-state">حدث خطأ أثناء البحث</div>';
+            searchResults.innerHTML = '<div class="empty-state">حدث خطأ أثناء البحث</div>';
         }
     }
 
-    // تطبيق الثيم
-    const saved = localStorage.getItem('darkMode');
-    if (saved === 'true') document.body.classList.remove('light');
-    else document.body.classList.add('light');
+    // ================ الإدخال الحيوي مع تحديث الرابط ================
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        const query = searchInput.value.trim();
+        if (query.length === 0) {
+            defaultContent.style.display = 'block';
+            const existingResults = resultsContainer.querySelector('.search-results');
+            if (existingResults) existingResults.remove();
+            renderSearchHistory();
+            renderAISuggestions();
+            updateURLWithQuery('');
+            return;
+        }
+        defaultContent.style.display = 'none';
+        searchTimeout = setTimeout(() => {
+            performSearch(query, true);
+            updateURLWithQuery(query);
+        }, 300);
+    });
 
-    // تسجيل Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('✅ Service Worker مسجل:', reg.scope))
-            .catch(err => console.warn('⚠️ فشل تسجيل Service Worker:', err));
+    // تحميل البحث من الرابط
+    window.addEventListener('load', () => {
+        const queryFromUrl = getQueryFromURL();
+        if (queryFromUrl) {
+            searchInput.value = queryFromUrl;
+            performSearch(queryFromUrl, false, true);
+        } else {
+            renderSearchHistory();
+            renderAISuggestions();
+        }
+        // تطبيق الثيم
+        const saved = localStorage.getItem('darkMode');
+        if (saved === 'true') document.body.classList.remove('light');
+        else document.body.classList.add('light');
+        // تسجيل Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('✅ Service Worker مسجل:', reg.scope))
+                .catch(err => console.warn('⚠️ فشل تسجيل Service Worker:', err));
+        }
+    });
+
+    // دالة مساعدة
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
     }
+
+    function parseImages(images) {
+        if (!images) return [];
+        try {
+            if (typeof images === 'string') return JSON.parse(images);
+            if (Array.isArray(images)) return images;
+        } catch(e) {}
+        return [];
+    }
+
+    window.showToast = showToast;
 </script>
 </body>
 </html>

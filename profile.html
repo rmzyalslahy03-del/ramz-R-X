@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
     <title>ملفي الشخصي | Ramz-X</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon/icon-192x192.png">
+    <link rel="apple-touch-icon" href="icon/icon-192x192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0-beta3/css/all.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="common.js"></script>
@@ -118,9 +122,11 @@
         .tab {
             flex: 1; text-align: center; padding: 10px; cursor: pointer;
             color: var(--text-secondary); border-bottom: 2px solid transparent;
-            font-weight: 600; font-size: 13px;
+            font-weight: 600; font-size: 13px; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
         }
         .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab i { font-size: 14px; }
         .tab-content { margin: 16px; }
         .post-card {
             background: var(--bg-card);
@@ -247,10 +253,10 @@
                 </div>`).join('') : ''}
             </div>
             <div class="tabs">
-                <div class="tab active" data-tab="posts">📝 منشوراتي</div>
-                <div class="tab" data-tab="likes">❤️ أعجبتني</div>
-                <div class="tab" data-tab="favorites">⭐ مفضلتي</div>
-                <div class="tab" data-tab="reposts">🔄 معاد نشري</div>
+                <div class="tab active" data-tab="posts"><i class="fas fa-table-cells"></i> منشوراتي</div>
+                <div class="tab" data-tab="likes"><i class="fas fa-heart"></i> أعجبتني</div>
+                <div class="tab" data-tab="favorites"><i class="fas fa-star"></i> مفضلتي</div>
+                <div class="tab" data-tab="reposts"><i class="fas fa-retweet"></i> معاد نشري</div>
             </div>
             <div class="tab-content" id="tabContent"><div class="empty-state">جاري التحميل...</div></div>
         `;
@@ -327,6 +333,37 @@
     const saved = localStorage.getItem('darkMode');
     if (saved === 'true') document.body.classList.remove('light');
     else document.body.classList.add('light');
+
+    // تسجيل Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('✅ Service Worker مسجل:', reg.scope))
+            .catch(err => console.warn('⚠️ فشل تسجيل Service Worker:', err));
+    }
+</script>
+
+<script>
+(function() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkFontAwesome);
+    } else {
+        checkFontAwesome();
+    }
+    function checkFontAwesome() {
+        var testIcon = document.createElement('i');
+        testIcon.className = 'fas fa-home';
+        testIcon.style.cssText = 'position:absolute;visibility:hidden;';
+        document.body.appendChild(testIcon);
+        var afterFont = window.getComputedStyle(testIcon, ':before').content;
+        document.body.removeChild(testIcon);
+        if (!afterFont || afterFont === 'none' || afterFont === '') {
+            document.body.classList.add('no-fontawesome');
+            console.warn('⚠️ Font Awesome لم يتحمّل، تم تفعيل الأيقونات الاحتياطية');
+        } else {
+            console.log('✅ Font Awesome محمّل بنجاح');
+        }
+    }
+})();
 </script>
 </body>
 </html>

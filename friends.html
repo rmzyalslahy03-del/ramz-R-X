@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0-beta3/css/all.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="common.js"></script>
@@ -91,6 +92,30 @@
         }
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
 
+        /* منطقة إضافة صديق */
+        .add-friend-area {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 12px 16px;
+            display: none;
+        }
+        .add-friend-area.active {
+            display: block;
+        }
+        .search-friend-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            color: var(--text-primary);
+            font-family: 'Cairo', sans-serif;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 12px;
+        }
+        .search-friend-input:focus { border-color: var(--accent); }
+
         .bottom-footer {
             position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card);
             display: flex; justify-content: space-around; padding: 8px 0;
@@ -111,7 +136,7 @@
 <div class="header">
     <button class="icon-btn" onclick="history.back()"><i class="fas fa-arrow-right"></i></button>
     <h2>الأصدقاء</h2>
-    <button class="icon-btn" onclick="showToast('قريباً: إضافة صديق')"><i class="fas fa-user-plus"></i></button>
+    <button class="icon-btn" id="addFriendBtn"><i class="fas fa-user-plus"></i></button>
 </div>
 
 <div class="stats-row">
@@ -129,6 +154,12 @@
     <div class="tab active" data-tab="followers">المتابِعون</div>
     <div class="tab" data-tab="following">المتابَعون</div>
     <div class="tab" data-tab="suggestions">اقتراحات</div>
+</div>
+
+<!-- منطقة إضافة صديق -->
+<div class="add-friend-area" id="addFriendArea">
+    <input type="text" class="search-friend-input" id="searchFriendInput" placeholder="ابحث عن مستخدم بالاسم...">
+    <div class="user-list" id="friendSearchResults"></div>
 </div>
 
 <div class="user-list" id="userList">
@@ -156,9 +187,69 @@
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             activeTab = tab.dataset.tab;
+            document.getElementById('addFriendArea').classList.remove('active');
+            document.getElementById('friendSearchResults').innerHTML = '';
             loadTabContent(activeTab);
         });
     });
+
+    // زر إضافة صديق
+    document.getElementById('addFriendBtn').addEventListener('click', () => {
+        const area = document.getElementById('addFriendArea');
+        area.classList.toggle('active');
+        if (area.classList.contains('active')) {
+            document.getElementById('searchFriendInput').value = '';
+            document.getElementById('friendSearchResults').innerHTML = '';
+            document.getElementById('searchFriendInput').focus();
+        }
+    });
+
+    // البحث أثناء الكتابة
+    let searchTimeout;
+    document.getElementById('searchFriendInput').addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.trim();
+        if (query.length === 0) {
+            document.getElementById('friendSearchResults').innerHTML = '';
+            return;
+        }
+        searchTimeout = setTimeout(() => searchFriends(query), 300);
+    });
+
+    async function searchFriends(query) {
+        const container = document.getElementById('friendSearchResults');
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-pulse"></i> جاري البحث...</div>';
+
+        const { data: users, error } = await supabase
+            .from('users')
+            .select('id, username, avatar, verified')
+            .ilike('username', `%${query}%`)
+            .neq('id', currentUser.id)
+            .limit(10);
+
+        if (error || !users?.length) {
+            container.innerHTML = '<div class="empty-state">لا يوجد مستخدمين بهذا الاسم</div>';
+            return;
+        }
+
+        container.innerHTML = users.map(u => {
+            const isFollowing = followingSet.has(u.id);
+            return `
+                <div class="user-item" onclick="goToProfile('${u.id}')">
+                    <img class="user-avatar" src="${u.avatar || 'https://randomuser.me/api/portraits/lego/5.jpg'}" alt="">
+                    <div class="user-info">
+                        <div class="user-name">
+                            ${u.verified ? '<i class="fas fa-check-circle" style="color:var(--accent-blue);font-size:12px;"></i> ' : ''}
+                            ${escapeHtml(u.username)}
+                        </div>
+                    </div>
+                    <button class="follow-btn ${isFollowing ? 'unfollow' : ''}" onclick="event.stopPropagation(); toggleFollow('${u.id}', this)">
+                        ${isFollowing ? 'إلغاء المتابعة' : 'متابعة'}
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
 
     // تحميل الإحصائيات أولاً
     async function loadStats() {
@@ -242,6 +333,11 @@
                 followingSet.delete(userId);
                 showToast('تم إلغاء المتابعة');
                 loadStats();
+                // تحديث أزرار البحث إذا كانت ظاهرة
+                const searchResults = document.getElementById('friendSearchResults');
+                if (searchResults.innerHTML !== '') {
+                    searchFriends(document.getElementById('searchFriendInput').value.trim());
+                }
             }
         } else {
             const { error } = await supabase
@@ -253,6 +349,10 @@
                 followingSet.add(userId);
                 showToast('تمت المتابعة');
                 loadStats();
+                const searchResults = document.getElementById('friendSearchResults');
+                if (searchResults.innerHTML !== '') {
+                    searchFriends(document.getElementById('searchFriendInput').value.trim());
+                }
             }
         }
     };
@@ -281,6 +381,30 @@
             .then(reg => console.log('✅ Service Worker مسجل:', reg.scope))
             .catch(err => console.warn('⚠️ فشل تسجيل Service Worker:', err));
     }
+</script>
+
+<script>
+(function() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkFontAwesome);
+    } else {
+        checkFontAwesome();
+    }
+    function checkFontAwesome() {
+        var testIcon = document.createElement('i');
+        testIcon.className = 'fas fa-home';
+        testIcon.style.cssText = 'position:absolute;visibility:hidden;';
+        document.body.appendChild(testIcon);
+        var afterFont = window.getComputedStyle(testIcon, ':before').content;
+        document.body.removeChild(testIcon);
+        if (!afterFont || afterFont === 'none' || afterFont === '') {
+            document.body.classList.add('no-fontawesome');
+            console.warn('⚠️ Font Awesome لم يتحمّل، تم تفعيل الأيقونات الاحتياطية');
+        } else {
+            console.log('✅ Font Awesome محمّل بنجاح');
+        }
+    }
+})();
 </script>
 </body>
 </html>

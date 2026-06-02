@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>استكشاف | Ramz-X</title>
+    <title>استكشاف ذكي | Ramz-X</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0-beta3/css/all.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="common.js"></script>
@@ -44,52 +45,73 @@
         }
         .header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-primary); border-bottom: 1px solid var(--border); }
         .header h2 { flex: 1; font-size: 18px; }
-        .icon-btn { background: none; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; padding: 8px; border-radius: 50%; }
+        .icon-btn { background: none; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; padding: 8px; border-radius: 50%; transition: background 0.2s; }
+        .icon-btn:hover { background: var(--bg-input); }
 
-        .tabs { display: flex; border-bottom: 1px solid var(--border); }
-        .tab {
-            flex: 1; text-align: center; padding: 12px; cursor: pointer;
-            color: var(--text-secondary); border-bottom: 2px solid transparent;
-            font-weight: 600; font-size: 14px; transition: 0.2s;
-        }
+        /* شريط بحث دلالي */
+        .search-mini { padding: 8px 16px; background: var(--bg-primary); border-bottom: 1px solid var(--border); }
+        .search-mini input { width: 100%; padding: 10px 16px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 25px; color: var(--text-primary); font-family: 'Cairo', sans-serif; font-size: 14px; outline: none; }
+
+        .tabs { display: flex; border-bottom: 1px solid var(--border); overflow-x: auto; }
+        .tab { flex-shrink: 0; text-align: center; padding: 12px 16px; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; font-weight: 600; font-size: 14px; transition: 0.2s; }
         .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        /* فلترة زمنية */
+        .filters { padding: 8px 16px; display: flex; gap: 8px; overflow-x: auto; border-bottom: 1px solid var(--border); }
+        .filter-chip { background: var(--bg-input); border: none; padding: 6px 12px; border-radius: 20px; font-family: 'Cairo', sans-serif; font-size: 12px; cursor: pointer; color: var(--text-secondary); white-space: nowrap; transition: 0.2s; }
+        .filter-chip.active { background: var(--accent); color: white; }
 
         .content { max-width: 600px; margin: 0 auto; padding: 8px; }
         .post-card {
             background: var(--bg-card); border-radius: var(--radius);
             margin-bottom: 16px; overflow: hidden; border: 1px solid var(--border);
-            cursor: pointer; transition: background 0.2s;
+            cursor: pointer; transition: transform 0.2s, background 0.2s;
         }
-        .post-card:hover { background: var(--bg-input); }
-        .post-image { width: 100%; max-height: 400px; object-fit: cover; display: block; background: var(--bg-input); }
+        .post-card:hover { background: var(--bg-input); transform: translateY(-2px); }
+        .post-header {
+            display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+            border-bottom: 1px solid var(--border); cursor: pointer;
+        }
+        .post-author-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--bg-input); }
+        .post-author-name { font-weight: 600; font-size: 13px; color: var(--text-primary); }
+        .post-time { font-size: 10px; color: var(--text-muted); margin-right: auto; }
+        .sentiment { font-size: 12px; margin-right: 8px; }
+        .sentiment.positive { color: #4caf50; }
+        .sentiment.negative { color: #f44336; }
+        .post-image { width: 100%; max-height: 350px; object-fit: cover; display: block; background: var(--bg-input); }
         .post-content { padding: 12px; }
-        .post-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
-        .post-text { color: var(--text-secondary); font-size: 14px; line-height: 1.5; }
-        .post-date { font-size: 10px; color: var(--text-muted); margin-top: 8px; }
-        .post-stats { display: flex; gap: 12px; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
-        .post-stats span { display: flex; align-items: center; gap: 4px; }
+        .post-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+        .post-text { color: var(--text-secondary); font-size: 13px; line-height: 1.5; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .post-stats { display: flex; align-items: center; gap: 16px; margin-top: 8px; font-size: 13px; color: var(--text-muted); }
+        .like-btn { background: none; border: none; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: var(--text-muted); font-family: 'Cairo', sans-serif; transition: 0.2s; }
+        .like-btn.liked { color: var(--accent); }
+        .like-btn:hover { color: var(--accent); }
 
         .user-item {
             display: flex; align-items: center; gap: 12px; padding: 12px;
             background: var(--bg-card); border-radius: 12px; margin-bottom: 8px;
-            cursor: pointer; border: 1px solid var(--border); transition: background 0.2s;
+            cursor: pointer; border: 1px solid var(--border); transition: 0.2s;
         }
-        .user-item:hover { background: var(--bg-input); }
+        .user-item:hover { background: var(--bg-input); transform: translateX(-2px); }
         .user-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: var(--bg-input); }
         .user-info { flex: 1; }
-        .user-name { font-weight: 700; }
-        .user-username { font-size: 12px; color: var(--text-muted); }
+        .user-name { font-weight: 700; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .user-username { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .follow-btn { background: var(--accent); color: white; border: none; border-radius: 20px; padding: 6px 14px; font-size: 12px; cursor: pointer; transition: 0.2s; }
+        .follow-btn:hover { opacity: 0.9; }
 
-        .category-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; }
+        .category-chips { display: flex; flex-wrap: wrap; gap: 10px; padding: 8px 0; }
         .chip {
             background: var(--bg-card); border: 1px solid var(--border);
-            padding: 10px 20px; border-radius: 20px; cursor: pointer;
-            font-size: 14px; font-weight: 600; transition: 0.2s;
-            color: var(--text-secondary);
+            padding: 10px 20px; border-radius: 30px; cursor: pointer;
+            font-size: 14px; font-weight: 500; transition: 0.2s; color: var(--text-secondary);
         }
-        .chip:hover { border-color: var(--accent); color: var(--accent); }
+        .chip:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.02); }
 
-        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+        .toast-message { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 8px 16px; border-radius: 24px; font-size: 13px; z-index: 200; white-space: nowrap; }
+        .best-time-tip { background: linear-gradient(135deg, var(--accent), #ff7b00); color: white; text-align: center; padding: 8px; font-size: 12px; margin: 8px auto; width: 90%; border-radius: 30px; cursor: pointer; transition: 0.2s; }
+        .best-time-tip:hover { opacity: 0.9; transform: scale(1.01); }
 
         .bottom-footer {
             position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card);
@@ -110,16 +132,24 @@
 
 <div class="header">
     <button class="icon-btn" onclick="history.back()"><i class="fas fa-arrow-right"></i></button>
-    <h2>استكشاف</h2>
+    <h2>استكشاف ذكي</h2>
+    <button class="icon-btn" id="refreshBtn" title="تحديث"><i class="fas fa-sync-alt"></i></button>
     <button class="icon-btn" onclick="window.location.href='search.html'"><i class="fas fa-search"></i></button>
 </div>
 
-<div class="tabs">
-    <div class="tab active" data-tab="trending">📈 الرائجة</div>
-    <div class="tab" data-tab="users">👤 المستخدمون</div>
+<div class="search-mini">
+    <input type="text" id="semanticSearchInput" placeholder="🔍 ابحث بالمعنى (ذكاء اصطناعي)...">
+</div>
+
+<div class="tabs" id="tabsContainer">
+    <div class="tab active" data-tab="personalized">✨ مخصص لك</div>
+    <div class="tab" data-tab="trending">📈 رائج ذكياً</div>
+    <div class="tab" data-tab="users">👤 اقتراحات متقدمة</div>
     <div class="tab" data-tab="categories">🏷️ التصنيفات</div>
 </div>
 
+<div id="filterContainer" class="filters" style="display: none;"></div>
+<div class="best-time-tip" id="bestTimeTip" style="display: none;">⏰ أفضل وقت للنشر: ساعدنا في تحليل تفاعلاتك</div>
 <div class="content" id="exploreContent">
     <div class="empty-state"><i class="fas fa-spinner fa-pulse"></i> جاري التحميل...</div>
 </div>
@@ -133,81 +163,284 @@
 </div>
 
 <script>
-    let activeTab = 'trending';
+    // ================ المتغيرات العامة ================
+    let activeTab = localStorage.getItem('explore_active_tab') || 'personalized';
+    let currentUser = null;
+    let currentFilter = 'all'; // all, today, week, month
+    let semanticTimeout = null;
+    let postsCache = {};
 
-    // التبويبات
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            activeTab = tab.dataset.tab;
-            loadContent(activeTab);
+    // ================ دوال مساعدة عامة ================
+    function showToast(msg) {
+        let toast = document.querySelector('.toast-message');
+        if(toast) toast.remove();
+        toast = document.createElement('div');
+        toast.className = 'toast-message';
+        toast.innerText = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
         });
-    });
+    }
 
-    // تحميل المحتوى حسب التبويب
-    async function loadContent(tab) {
-        const container = document.getElementById('exploreContent');
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-pulse"></i> جاري التحميل...</div>';
+    function parseImages(imgs) {
+        if(!imgs) return [];
+        try {
+            return typeof imgs === 'string' ? JSON.parse(imgs) : (Array.isArray(imgs) ? imgs : []);
+        } catch(e) { return []; }
+    }
 
-        if (tab === 'trending') {
-            // المنشورات الرائجة (الأكثر إعجاباً)
-            const { data: posts, error } = await supabase
-                .from('posts')
-                .select('*, users:author_id (username, avatar)')
-                .eq('hidden', false)
-                .order('likes_count', { ascending: false })
-                .limit(15);
+    function timeAgo(date) {
+        if(!date) return '';
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        if(seconds < 60) return 'الآن';
+        const intervals = { 'سنة':31536000, 'شهر':2592000, 'أسبوع':604800, 'يوم':86400, 'ساعة':3600, 'دقيقة':60 };
+        for(let [unit, secs] of Object.entries(intervals)) {
+            let count = Math.floor(seconds / secs);
+            if(count >= 1) return `منذ ${count} ${unit}`;
+        }
+        return 'منذ لحظات';
+    }
 
-            if (error || !posts?.length) {
-                container.innerHTML = '<div class="empty-state">لا توجد منشورات رائجة حالياً</div>';
-                return;
+    function formatNumber(num) {
+        if(num >= 1000000) return (num/1000000).toFixed(1) + 'م';
+        if(num >= 1000) return (num/1000).toFixed(1) + 'ألف';
+        return num.toString();
+    }
+
+    // ================ 1. خوارزمية الرائجة الديناميكية (Hot Score) ================
+    function calculateTrendingScore(post) {
+        const hoursSincePost = (new Date() - new Date(post.created_at)) / (1000 * 60 * 60);
+        const interactions = (post.likes_count || 0) * 1 + (post.comments_count || 0) * 1.5;
+        const views = (post.views_count || 0) * 0.3;
+        return (interactions + views) / Math.pow(hoursSincePost + 2, 1.2);
+    }
+
+    // ================ 2. كشف المحتوى غير المناسب ================
+    const inappropriateWords = ['سكس', 'خمر', 'مخدرات', 'عنف', 'إباحية', 'جنس', 'قمار'];
+    function isContentAppropriate(text) {
+        if(!text) return true;
+        const lower = text.toLowerCase();
+        return !inappropriateWords.some(word => lower.includes(word));
+    }
+
+    // ================ 3. تحليل المشاعر ================
+    const positiveWords = ['رائع', 'جميل', 'ممتاز', 'حلو', 'سعيد', 'أحسن', 'شكراً', 'جميل جداً', 'مذهل'];
+    const negativeWords = ['سيء', 'حزين', 'ممل', 'غبي', 'أحمق', 'خطر', 'فاشل', 'كئيب', 'متعسف'];
+    function analyzeSentiment(text) {
+        if(!text) return 'neutral';
+        let score = 0;
+        positiveWords.forEach(w => { if(text.includes(w)) score++; });
+        negativeWords.forEach(w => { if(text.includes(w)) score--; });
+        if(score > 0) return 'positive';
+        if(score < 0) return 'negative';
+        return 'neutral';
+    }
+
+    // ================ 4. تخصيص المحتوى (بناءً على تصنيفات تفاعل المستخدم) ================
+    async function getPersonalizedPosts(limit = 12) {
+        if(!currentUser) {
+            // إذا لم يسجل دخول، عرض منشورات عشوائية رائجة
+            const { data } = await supabase.from('posts').select('*, users:author_id(id, username, avatar)').eq('hidden', false).order('likes_count', { ascending: false }).limit(limit);
+            return data || [];
+        }
+        // جلب آخر 5 تصنيفات تفاعل معها المستخدم
+        const { data: likedPosts } = await supabase.from('likes').select('posts(category)').eq('user_id', currentUser.id).limit(20);
+        const categories = [...new Map((likedPosts || []).map(lp => [lp.posts?.category, lp.posts?.category]).filter(c => c))].slice(0,4);
+        if(categories.length === 0) {
+            const { data } = await supabase.from('posts').select('*, users:author_id(id, username, avatar)').eq('hidden', false).order('likes_count', { ascending: false }).limit(limit);
+            return data || [];
+        }
+        const { data: posts } = await supabase.from('posts').select('*, users:author_id(id, username, avatar)').eq('hidden', false).in('category', categories).limit(limit);
+        return posts || [];
+    }
+
+    // ================ 5. البحث الدلالي ================
+    async function semanticSearch(query) {
+        if(!query.trim()) return [];
+        // بحث متقدم في العنوان والمحتوى
+        const { data } = await supabase
+            .from('posts')
+            .select('*, users:author_id(id, username, avatar)')
+            .eq('hidden', false)
+            .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+            .limit(15);
+        return data || [];
+    }
+
+    // ================ 6. اقتراح المستخدمين المتقدم (خوارزمية الدرجة الثانية) ================
+    async function getSmartUserSuggestions() {
+        if(!currentUser) {
+            const { data } = await supabase.from('users').select('id, username, avatar, verified').limit(12);
+            return data || [];
+        }
+        // جلب متابعي المستخدم الحالي
+        const { data: myFollows } = await supabase.from('follows').select('following_id').eq('follower_id', currentUser.id);
+        const myFollowIds = (myFollows || []).map(f => f.following_id);
+        myFollowIds.push(currentUser.id);
+        if(myFollowIds.length === 1) {
+            const { data } = await supabase.from('users').select('id, username, avatar, verified').not('id', 'in', `(${myFollowIds.join(',')})`).limit(12);
+            return data || [];
+        }
+        // اقتراح: متابعي المتابعين (الدرجة الثانية) مع ترتيب حسب الأكثر شيوعاً
+        const { data: secondDegree } = await supabase
+            .from('follows')
+            .select('follower_id, users:following_id(id, username, avatar, verified)')
+            .in('follower_id', myFollowIds)
+            .not('following_id', 'in', `(${myFollowIds.join(',')})`);
+        const suggestions = new Map();
+        (secondDegree || []).forEach(item => {
+            if(item.users) suggestions.set(item.users.id, item.users);
+        });
+        return Array.from(suggestions.values()).slice(0,12);
+    }
+
+    // ================ 7. التنبؤ بأفضل وقت للنشر ================
+    async function analyzeBestTimeToPost() {
+        if(!currentUser) return;
+        const { data: myPosts } = await supabase.from('posts').select('created_at, likes_count, comments_count').eq('author_id', currentUser.id);
+        if(!myPosts || myPosts.length < 3) return;
+        const interactionsByHour = {};
+        myPosts.forEach(p => {
+            const hour = new Date(p.created_at).getHours();
+            const score = (p.likes_count || 0) + (p.comments_count || 0) * 1.2;
+            interactionsByHour[hour] = (interactionsByHour[hour] || 0) + score;
+        });
+        let bestHour = 18;
+        let maxScore = 0;
+        for(let h in interactionsByHour) {
+            if(interactionsByHour[h] > maxScore) {
+                maxScore = interactionsByHour[h];
+                bestHour = parseInt(h);
             }
+        }
+        const tipDiv = document.getElementById('bestTimeTip');
+        tipDiv.style.display = 'block';
+        tipDiv.innerHTML = `⏰ أفضل وقت للنشر بالنسبة لك: ${bestHour}:00 - ${bestHour+2}:00 (يحصل منشورك على تفاعل أكثر) 🚀`;
+        tipDiv.onclick = () => showToast('انشر في هذا الوقت لزيادة الوصول!');
+    }
 
-            container.innerHTML = posts.map(p => {
-                const img = parseImages(p.image)[0];
-                return `
-                <div class="post-card" onclick="window.location.href='home.html'">
-                    ${img ? `<img class="post-image" src="${img}" alt="" loading="lazy">` : ''}
-                    <div class="post-content">
+    // ================ الإعجاب السريع ================
+    async function toggleLike(postId, btnElement) {
+        if(!currentUser) {
+            showToast('يرجى تسجيل الدخول أولاً');
+            window.location.href = 'login.html';
+            return;
+        }
+        const isLiked = btnElement.classList.contains('liked');
+        const countSpan = btnElement.querySelector('span');
+        let currentCount = parseInt(countSpan.innerText) || 0;
+        try {
+            if(isLiked) {
+                await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+                btnElement.classList.remove('liked');
+                countSpan.innerText = currentCount - 1;
+            } else {
+                await supabase.from('likes').insert({ post_id: postId, user_id: currentUser.id });
+                btnElement.classList.add('liked');
+                countSpan.innerText = currentCount + 1;
+            }
+            // تحديث في الخلفية (اختياري)
+            const { count } = await supabase.rpc('get_likes_count', { post_id: postId }).catch(() => ({ count: null }));
+            if(count !== null) countSpan.innerText = count;
+        } catch(err) {
+            console.error(err);
+            showToast('حدث خطأ، حاول مرة أخرى');
+        }
+    }
+
+    // ================ عرض المنشورات ================
+    function renderPosts(posts, container, isTrending = false) {
+        if(!posts || posts.length === 0) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i> لا توجد منشورات</div>';
+            return;
+        }
+        let html = '';
+        for(let p of posts) {
+            if(!isContentAppropriate(p.title + ' ' + p.content)) continue;
+            const sentiment = analyzeSentiment(p.content);
+            const sentimentIcon = sentiment === 'positive' ? '😊' : (sentiment === 'negative' ? '😞' : '😐');
+            const img = parseImages(p.image)[0];
+            const user = p.users || {};
+            html += `
+                <div class="post-card" data-post-id="${p.id}">
+                    <div class="post-header" onclick="window.location.href='public-profile.html?user=${user.id}'">
+                        <img class="post-author-avatar" src="${user.avatar || 'https://randomuser.me/api/portraits/lego/5.jpg'}" loading="lazy">
+                        <div>
+                            <div class="post-author-name">${escapeHtml(user.username)}</div>
+                            <div class="post-time">${timeAgo(p.created_at)}</div>
+                        </div>
+                        <div class="sentiment ${sentiment}" title="تحليل المشاعر">${sentimentIcon}</div>
+                        <div class="post-time">${p.category || 'عام'}</div>
+                    </div>
+                    ${img ? `<img class="post-image" src="${img}" loading="lazy" onclick="window.location.href='home.html'">` : ''}
+                    <div class="post-content" onclick="window.location.href='home.html'">
                         <div class="post-title">${escapeHtml(p.title)}</div>
                         <div class="post-text">${escapeHtml(p.content?.substring(0, 200) || '')}</div>
-                        <div class="post-date">${timeAgo(p.created_at)} • ${p.category || 'عام'}</div>
                         <div class="post-stats">
-                            <span><i class="far fa-heart"></i> ${formatNumber(p.likes_count || 0)}</span>
-                            <span><i class="far fa-comment"></i> ${formatNumber(p.comments_count || 0)}</span>
+                            <button class="like-btn ${p.user_liked ? 'liked' : ''}" onclick="event.stopPropagation(); toggleLike('${p.id}', this)">
+                                <i class="far fa-heart"></i> <span>${formatNumber(p.likes_count || 0)}</span>
+                            </button>
+                            <span onclick="event.stopPropagation(); window.location.href='home.html'"><i class="far fa-comment"></i> ${formatNumber(p.comments_count || 0)}</span>
                             <span><i class="far fa-eye"></i> ${formatNumber(p.views_count || 0)}</span>
                         </div>
                     </div>
-                </div>`;
-            }).join('');
+                </div>
+            `;
         }
-        else if (tab === 'users') {
-            // مستخدمون مقترحون (غير متابعين)
-            const currentUser = getCurrentUser();
-            let query = supabase.from('users').select('id, username, avatar, verified').limit(15);
+        container.innerHTML = html;
+    }
 
-            if (currentUser) {
-                const { data: follows } = await supabase
-                    .from('follows')
-                    .select('following_id')
-                    .eq('follower_id', currentUser.id);
+    // ================ تحميل المحتوى حسب التبويب ================
+    async function loadContent() {
+        const container = document.getElementById('exploreContent');
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-pulse"></i> جاري التحليل الذكي...</div>';
+        const filterDiv = document.getElementById('filterContainer');
+        
+        if(activeTab === 'trending' || activeTab === 'personalized') {
+            filterDiv.style.display = 'flex';
+            setupFilterChips();
+        } else {
+            filterDiv.style.display = 'none';
+        }
 
-                const ids = (follows || []).map(f => f.following_id);
-                ids.push(currentUser.id); // استبعاد المستخدم الحالي أيضاً
-                query = query.not('id', 'in', `(${ids.join(',')})`);
+        if(activeTab === 'personalized') {
+            const posts = await getPersonalizedPosts(15);
+            renderPosts(posts, container);
+        }
+        else if(activeTab === 'trending') {
+            let query = supabase.from('posts').select('*, users:author_id(id, username, avatar)').eq('hidden', false);
+            const now = new Date();
+            let startDate = null;
+            if(currentFilter === 'today') startDate = new Date(now.setHours(0,0,0,0));
+            else if(currentFilter === 'week') startDate = new Date(now.setDate(now.getDate()-7));
+            else if(currentFilter === 'month') startDate = new Date(now.setMonth(now.getMonth()-1));
+            if(startDate) query = query.gte('created_at', startDate.toISOString());
+            const { data } = await query;
+            if(data && data.length) {
+                const scored = data.map(p => ({ ...p, score: calculateTrendingScore(p) })).sort((a,b) => b.score - a.score).slice(0,20);
+                renderPosts(scored, container);
+            } else {
+                renderPosts([], container);
             }
-
-            const { data: users, error } = await query;
-
-            if (error || !users?.length) {
-                container.innerHTML = '<div class="empty-state">لا يوجد مستخدمون مقترحون حالياً</div>';
+        }
+        else if(activeTab === 'users') {
+            const users = await getSmartUserSuggestions();
+            if(!users.length) {
+                container.innerHTML = '<div class="empty-state">لا توجد اقتراحات حالياً</div>';
                 return;
             }
-
             container.innerHTML = users.map(u => `
                 <div class="user-item" onclick="window.location.href='public-profile.html?user=${u.id}'">
-                    <img class="user-avatar" src="${u.avatar || 'https://randomuser.me/api/portraits/lego/5.jpg'}" alt="">
+                    <img class="user-avatar" src="${u.avatar || 'https://randomuser.me/api/portraits/lego/5.jpg'}" loading="lazy">
                     <div class="user-info">
                         <div class="user-name">
                             ${u.verified ? '<i class="fas fa-check-circle" style="color:var(--accent-blue);font-size:12px;"></i> ' : ''}
@@ -219,42 +452,134 @@
                 </div>
             `).join('');
         }
-        else if (tab === 'categories') {
-            // عرض قائمة بالتصنيفات
-            const categories = [
-                'تقنية', 'أدب', 'فن', 'سفر', 'موسيقى', 'رياضة', 'عام',
-                'فلسفة', 'خواطر', 'مغامرات', 'تعليم', 'ترفيه', 'أخبار'
-            ];
-
+        else if(activeTab === 'categories') {
+            const categories = ['تقنية', 'أدب', 'فن', 'سفر', 'موسيقى', 'رياضة', 'عام', 'فلسفة', 'خواطر', 'مغامرات', 'تعليم', 'ترفيه', 'أخبار'];
             container.innerHTML = `
                 <div class="category-chips">
-                    ${categories.map(c => `
-                        <div class="chip" onclick="window.location.href='search.html?q=${encodeURIComponent(c)}'">
-                            ${c}
-                        </div>
-                    `).join('')}
+                    ${categories.map(c => `<div class="chip" onclick="window.location.href='search.html?q=${encodeURIComponent(c)}'">${c}</div>`).join('')}
                 </div>
                 <p style="text-align:center;color:var(--text-muted);margin-top:20px;">
-                    اختر تصنيفاً لاستعراض المنشورات المتعلقة
+                    <i class="fas fa-magic"></i> اختر تصنيفاً لاكتشاف محتوى مخصص
                 </p>
             `;
         }
     }
 
-    // بدء التحميل
-    loadContent('trending');
-
-    // تطبيق الثيم
-    const saved = localStorage.getItem('darkMode');
-    if (saved === 'true') document.body.classList.remove('light');
-    else document.body.classList.add('light');
-
-    // تسجيل Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('✅ Service Worker مسجل:', reg.scope))
-            .catch(err => console.warn('⚠️ فشل تسجيل Service Worker:', err));
+    function setupFilterChips() {
+        const filterDiv = document.getElementById('filterContainer');
+        if(!filterDiv) return;
+        filterDiv.innerHTML = `
+            <button class="filter-chip ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">كل الوقت</button>
+            <button class="filter-chip ${currentFilter === 'today' ? 'active' : ''}" data-filter="today">اليوم</button>
+            <button class="filter-chip ${currentFilter === 'week' ? 'active' : ''}" data-filter="week">هذا الأسبوع</button>
+            <button class="filter-chip ${currentFilter === 'month' ? 'active' : ''}" data-filter="month">هذا الشهر</button>
+        `;
+        filterDiv.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.addEventListener('click', async () => {
+                currentFilter = chip.dataset.filter;
+                await loadContent();
+                setupFilterChips();
+            });
+        });
     }
+
+    // ================ البحث الدلالي المباشر ================
+    document.getElementById('semanticSearchInput').addEventListener('input', (e) => {
+        clearTimeout(semanticTimeout);
+        const query = e.target.value.trim();
+        if(query === '') {
+            loadContent();
+            return;
+        }
+        semanticTimeout = setTimeout(async () => {
+            const container = document.getElementById('exploreContent');
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-pulse"></i> جاري البحث الدلالي...</div>';
+            const results = await semanticSearch(query);
+            renderPosts(results, container);
+        }, 500);
+    });
+
+    // ================ تحديث يدوي ================
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+        loadContent();
+        showToast('تم تحديث المحتوى');
+    });
+
+    // ================ الحصول على المستخدم الحالي ================
+    async function initUser() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if(user) {
+            const { data } = await supabase.from('users').select('id').eq('id', user.id).single();
+            currentUser = data;
+            analyzeBestTimeToPost();
+        }
+    }
+
+    // ================ التهيئة العامة ================
+    window.addEventListener('load', async () => {
+        await initUser();
+        
+        // إعداد التبويبات
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                activeTab = tab.dataset.tab;
+                localStorage.setItem('explore_active_tab', activeTab);
+                loadContent();
+            });
+        });
+        
+        // تفعيل التبويب المخزن
+        const savedTab = localStorage.getItem('explore_active_tab');
+        if(savedTab && document.querySelector(`.tab[data-tab="${savedTab}"]`)) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${savedTab}"]`).classList.add('active');
+            activeTab = savedTab;
+        }
+        
+        loadContent();
+        
+        // تطبيق الثيم
+        const savedTheme = localStorage.getItem('darkMode');
+        if(savedTheme === 'true') document.body.classList.remove('light');
+        else document.body.classList.add('light');
+        
+        // تسجيل Service Worker
+        if('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('✅ Service Worker مسجل:', reg.scope))
+                .catch(err => console.warn('⚠️ فشل تسجيل Service Worker:', err));
+        }
+    });
+
+    // ================ دوال مساعدة للتوافق مع الكود الأصلي ================
+    window.getCurrentUser = function() { return currentUser; };
+</script>
+
+<script>
+// ================ نظام الأيقونات الاحتياطية (محفوظ كما هو) ================
+(function() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkFontAwesome);
+    } else {
+        checkFontAwesome();
+    }
+    function checkFontAwesome() {
+        var testIcon = document.createElement('i');
+        testIcon.className = 'fas fa-home';
+        testIcon.style.cssText = 'position:absolute;visibility:hidden;';
+        document.body.appendChild(testIcon);
+        var afterFont = window.getComputedStyle(testIcon, ':before').content;
+        document.body.removeChild(testIcon);
+        if (!afterFont || afterFont === 'none' || afterFont === '') {
+            document.body.classList.add('no-fontawesome');
+            console.warn('⚠️ Font Awesome لم يتحمّل، تم تفعيل الأيقونات الاحتياطية');
+        } else {
+            console.log('✅ Font Awesome محمّل بنجاح');
+        }
+    }
+})();
 </script>
 </body>
 </html>

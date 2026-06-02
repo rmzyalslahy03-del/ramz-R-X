@@ -5,12 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
     <title>صندوق الوارد | Ramz-X</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
-    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon/icon-192x192.png">
+    <link rel="apple-touch-icon" href="icon/icon-192x192.png">
+
+    <!-- ربط Font Awesome المزدوج (مثل home.html) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0-beta3/css/all.css">
+
+    <!-- سكريبت إلغاء Service Worker المؤقت لضمان تحميل الأيقونات -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                    console.log('تم إلغاء Service Worker مؤقتاً لتجنب مشاكل التخزين المؤقت');
+                }
+            });
+        }
+    </script>
+
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="common.js"></script>
+
     <style>
         :root {
             --bg-primary: #000000;
@@ -23,6 +40,13 @@
             --border: #2c2c2c;
             --radius: 1rem;
             --chat-bg: #1e1e1e;
+            --btn-bg: rgba(30,30,35,0.9);
+            --btn-border: rgba(255,255,255,0.06);
+            --btn-active: #2a2a2a;
+            --overlay-bg: rgba(0,0,0,0.6);
+            --toast-bg: #000000dd;
+            --sheet-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            --toast-text: #ffffff;
         }
         body.light {
             --bg-primary: #f5f5f5;
@@ -33,6 +57,12 @@
             --text-muted: #666666;
             --border: #e0e0e0;
             --chat-bg: #f9f9f9;
+            --btn-bg: rgba(0,0,0,0.05);
+            --btn-border: rgba(0,0,0,0.1);
+            --btn-active: #e0e0e0;
+            --overlay-bg: rgba(255,255,255,0.8);
+            --toast-bg: #ffffffdd;
+            --toast-text: #111111;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -93,7 +123,7 @@
         }
         .chat-sheet.open { bottom: 0; }
         .chat-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; background: var(--bg-card); }
-        .chat-header .close-btn { margin-right: auto; background: none; border: none; color: var(--text-primary); font-size: 20px; }
+        .chat-header .close-btn { margin-right: auto; background: none; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; }
         .msg-row { display: flex; margin-bottom: 12px; align-items: flex-end; gap: 6px; }
         .msg-row.own { justify-content: flex-end; }
@@ -107,25 +137,25 @@
         .msg-attachment { max-width: 200px; border-radius: 12px; margin-top: 6px; }
         .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
         .msg-actions { display: flex; gap: 8px; margin-top: 4px; }
-        .msg-actions button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; }
-        .msg-actions button.liked { color: var(--accent); }
+        .msg-actions button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
         .reply-preview { font-size: 11px; color: var(--text-muted); border-right: 2px solid var(--accent); padding-right: 8px; margin-bottom: 4px; }
         .edit-input { width: 100%; background: var(--bg-input); border: 1px solid var(--accent); border-radius: 12px; padding: 6px 12px; color: var(--text-primary); font-family: 'Cairo'; }
 
         .chat-input-area { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: center; position: relative; background: var(--bg-card); }
         .chat-input-area input { flex: 1; background: var(--bg-input); border: 1px solid var(--border); border-radius: 25px; padding: 10px 16px; color: var(--text-primary); font-family: 'Cairo'; }
-        .chat-input-area button { background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer; padding: 6px; }
+        .chat-input-area button { background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer; padding: 6px; display: inline-flex; align-items: center; }
         .send-btn { background: var(--accent) !important; color: white !important; border-radius: 25px !important; padding: 10px 20px !important; font-size: 16px !important; }
 
         .emoji-picker {
             position: absolute; bottom: 60px; right: 10px; background: var(--bg-card); border-radius: 15px;
             padding: 10px; width: 280px; max-height: 200px; overflow-y: auto; display: none; flex-wrap: wrap; gap: 4px;
-            z-index: 2200; box-shadow: 0 -10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border);
+            z-index: 2200; box-shadow: var(--sheet-shadow); border: 1px solid var(--border);
         }
         .emoji-picker.active { display: flex; }
         .emoji-option { font-size: 24px; cursor: pointer; padding: 6px; border-radius: 8px; }
         .emoji-option:hover { background: var(--bg-input); }
 
+        /* الشريط السفلي بنفس أنماط home.html */
         .bottom-footer {
             position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card);
             display: flex; justify-content: space-around; padding: 8px 0;
@@ -135,10 +165,17 @@
             background: none; border: none; text-align: center; cursor: pointer;
             color: var(--text-secondary); text-decoration: none; font-family: 'Cairo', sans-serif;
             display: flex; flex-direction: column; align-items: center; gap: 2px;
+            transition: 0.2s;
         }
-        .footer-button .icon { font-size: 22px; }
+        .footer-button:hover { color: var(--accent); transform: scale(1.05); }
+        .footer-button .icon { font-size: 22px; display: block; margin-bottom: 2px; }
         .footer-button .label { font-size: 11px; font-weight: 600; }
         .footer-button.create-btn .icon { font-size: 28px; color: var(--accent); }
+        .footer-button.create-btn:hover .icon { transform: scale(1.1); }
+
+        /* نظام الاحتياطي (fallback) إذا فشل Font Awesome (كما في home.html) */
+        body.no-fontawesome .footer-button i { display: none; }
+        body.no-fontawesome .footer-button .fallback-icon { display: inline-block; }
 
         #hiddenFileInput { display: none; }
     </style>
@@ -198,6 +235,7 @@
 </div>
 
 <script>
+    // ===================== دوال مساعدة (من common.js ومحلية) =====================
     const currentUser = getCurrentUser();
     if (!currentUser) window.location.href = 'login.html';
 
@@ -208,6 +246,23 @@
     let originalData = [];
     let selectedAttachment = null;
     let replyTo = null;
+
+    // كشف فشل Font Awesome وإضافة class للـ body (نظام الاحتياطي)
+    (function() {
+        var testIcon = document.createElement('i');
+        testIcon.className = 'fas fa-home';
+        testIcon.style.position = 'absolute';
+        testIcon.style.visibility = 'hidden';
+        document.body.appendChild(testIcon);
+        var afterFont = window.getComputedStyle(testIcon, ':before').content;
+        document.body.removeChild(testIcon);
+        if (!afterFont || afterFont === 'none' || afterFont === '') {
+            document.body.classList.add('no-fontawesome');
+            console.warn('⚠️ Font Awesome لم يتحمّل، تم تفعيل الأيقونات الاحتياطية');
+        } else {
+            console.log('✅ Font Awesome محمّل بنجاح');
+        }
+    })();
 
     // ---------- التبويبات ----------
     function switchTab(tabName) {
@@ -375,7 +430,7 @@
         container.innerHTML = validItems.map(i => i.html).join('') || '<div class="empty-state">لا توجد مجموعات</div>';
     }
 
-    // ---------- نافذة المحادثة المطورة ----------
+    // ---------- نافذة المحادثة ----------
     window.openChat = async function(chatId, type, name, avatar) {
         activeChatId = chatId; activeChatType = type;
         document.getElementById('chatName').textContent = name;
@@ -570,7 +625,7 @@
         if (!name) return;
         const { data: group } = await supabase.from('groups_table').insert({ name, created_by: currentUser.id }).select().single();
         await supabase.from('group_members').insert({ group_id: group.id, user_id: currentUser.id });
-        alert('تم إنشاء المجموعة');
+        showToast('تم إنشاء المجموعة');
         loadTabContent('groups');
     };
 
@@ -615,7 +670,6 @@
             switchTab('chats');
         }
 
-        // فتح محادثة تلقائياً إذا طُلب من رابط خارجي (مثل public-profile.html)
         const urlParams = new URLSearchParams(window.location.search);
         const chatIdFromUrl = urlParams.get('chat');
         const chatTypeFromUrl = urlParams.get('type') || 'private';
@@ -632,13 +686,6 @@
     const saved = localStorage.getItem('darkMode');
     if (saved === 'true') document.body.classList.remove('light');
     else document.body.classList.add('light');
-
-    // تسجيل Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('✅ Service Worker مسجل:', reg.scope))
-            .catch(err => console.warn('⚠️ فشل تسجيل Service Worker:', err));
-    }
 </script>
 </body>
 </html>

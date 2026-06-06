@@ -1,0 +1,530 @@
+-- ============================================================
+-- 1. تمكين الامتدادات الأساسية
+-- ============================================================
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================================
+-- 2. إنشاء الجداول
+-- ============================================================
+
+-- جدول المستخدمين (متوافق مع common.js و edit-profile.html)
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  username TEXT UNIQUE NOT NULL,
+  full_name TEXT,
+  email TEXT UNIQUE,
+  avatar TEXT,
+  cover TEXT,
+  bio TEXT,
+  verified BOOLEAN DEFAULT false,
+  is_guest BOOLEAN DEFAULT false,
+  followers_count INT DEFAULT 0,
+  following_count INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- جدول المنشورات (يدعم الصور بصيغة JSONB)
+CREATE TABLE posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  author_name TEXT,
+  title TEXT,
+  content TEXT,
+  image JSONB,                     -- مخزن كمصفوفة صور
+  category TEXT DEFAULT 'عام',
+  hashtag TEXT,
+  hidden BOOLEAN DEFAULT false,    -- true => مسودة
+  likes_count INT DEFAULT 0,
+  comments_count INT DEFAULT 0,
+  reposts_count INT DEFAULT 0,
+  favorites_count INT DEFAULT 0,
+  views_count INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- جدول الإعجابات
+CREATE TABLE likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, post_id)
+);
+
+-- جدول المفضلة
+CREATE TABLE favorites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, post_id)
+);
+
+-- جدول إعادة النشر (يخزن فقط العلاقة)
+CREATE TABLE reposts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  original_post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+  repost_post_id UUID REFERENCES posts(id) ON DELETE CASCADE, -- المنشور الجديد الذي تم إنشاؤه
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, original_post_id)
+);
+
+-- جدول التعليقات (يدعم الردود)
+CREATE TABLE comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  edited BOOLEAN DEFAULT false,
+  likes INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- إعجابات التعليقات
+CREATE TABLE comment_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, comment_id)
+);
+
+-- جدول المتابعات
+CREATE TABLE follows (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  follower_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  following_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(follower_id, following_id)
+);
+
+-- جدول المحادثات (خاصة)
+CREATE TABLE conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- المشاركون في المحادثة
+CREATE TABLE conversation_participants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(conversation_id, user_id)
+);
+
+-- رسائل المحادثات الخاصة
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT,
+  attachment JSONB,       -- مصفوفة روابط الصور
+  parent_id UUID REFERENCES messages(id) ON DELETE SET NULL,
+  edited BOOLEAN DEFAULT false,
+  deleted BOOLEAN DEFAULT false,
+  likes INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- إعجابات الرسائل
+CREATE TABLE message_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, message_id)
+);
+
+-- المجموعات (الجروبات)
+CREATE TABLE groups_table (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  created_by UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- أعضاء المجموعات
+CREATE TABLE group_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID REFERENCES groups_table(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  joined_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(group_id, user_id)
+);
+
+-- رسائل المجموعات
+CREATE TABLE group_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID REFERENCES groups_table(id) ON DELETE CASCADE,
+  sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT,
+  attachment JSONB,
+  parent_id UUID REFERENCES group_messages(id) ON DELETE SET NULL,
+  edited BOOLEAN DEFAULT false,
+  deleted BOOLEAN DEFAULT false,
+  likes INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- قصص (Stories)
+CREATE TABLE stories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  image TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  expires_at TIMESTAMPTZ DEFAULT (now() + interval '24 hours')
+);
+
+-- روابط التواصل الاجتماعي
+CREATE TABLE user_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  platform TEXT NOT NULL,
+  url TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- الإشعارات العامة
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipient_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  actor_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT CHECK (type IN ('like', 'comment', 'follow', 'repost')),
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+  seen BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- إشعارات النظام
+CREATE TABLE system_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  text TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- طلبات المراسلة (للمستخدمين الذين ليسوا متابعين)
+CREATE TABLE message_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  from_user UUID REFERENCES users(id) ON DELETE CASCADE,
+  to_user UUID REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(from_user, to_user)
+);
+
+-- ============================================================
+-- 3. دوال مساعدة (Functions)
+-- ============================================================
+
+-- دالة حساب النقاط الرائجة (Hot Score) كما في explore.html
+CREATE OR REPLACE FUNCTION calculate_hot_score(likes INT, comments INT, views INT, created_at TIMESTAMPTZ)
+RETURNS FLOAT AS $$
+DECLARE
+  hours_since FLOAT;
+  interactions FLOAT;
+BEGIN
+  hours_since := EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600.0;
+  interactions := likes * 1.0 + comments * 1.5 + views * 0.3;
+  RETURN interactions / POWER(hours_since + 2, 1.2);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- دالة لزيادة المشاهدات (للـ RPC)
+CREATE OR REPLACE FUNCTION increment_views(post_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE posts SET views_count = views_count + 1 WHERE id = post_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- دالة لزيادة عدد المتابعين (يمكن استخدامها في RPC إذا أردت)
+CREATE OR REPLACE FUNCTION update_follow_counts()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE users SET followers_count = followers_count + 1 WHERE id = NEW.following_id;
+    UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE users SET followers_count = followers_count - 1 WHERE id = OLD.following_id;
+    UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================
+-- 4. Triggers
+-- ============================================================
+
+-- Trigger للمتابعات لتحديث الأعداد في users
+CREATE TRIGGER follow_counts_trigger
+AFTER INSERT OR DELETE ON follows
+FOR EACH ROW EXECUTE FUNCTION update_follow_counts();
+
+-- Trigger لزيادة likes_count في posts
+CREATE OR REPLACE FUNCTION update_post_likes_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE posts SET likes_count = likes_count + 1 WHERE id = NEW.post_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE posts SET likes_count = likes_count - 1 WHERE id = OLD.post_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER likes_count_trigger
+AFTER INSERT OR DELETE ON likes
+FOR EACH ROW EXECUTE FUNCTION update_post_likes_count();
+
+-- Trigger لزيادة favorites_count
+CREATE OR REPLACE FUNCTION update_post_favorites_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE posts SET favorites_count = favorites_count + 1 WHERE id = NEW.post_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE posts SET favorites_count = favorites_count - 1 WHERE id = OLD.post_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER favorites_count_trigger
+AFTER INSERT OR DELETE ON favorites
+FOR EACH ROW EXECUTE FUNCTION update_post_favorites_count();
+
+-- Trigger لزيادة comments_count
+CREATE OR REPLACE FUNCTION update_post_comments_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE posts SET comments_count = comments_count + 1 WHERE id = NEW.post_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE posts SET comments_count = comments_count - 1 WHERE id = OLD.post_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER comments_count_trigger
+AFTER INSERT OR DELETE ON comments
+FOR EACH ROW EXECUTE FUNCTION update_post_comments_count();
+
+-- Trigger لزيادة reposts_count (عند إضافة سجل في reposts)
+CREATE OR REPLACE FUNCTION update_post_reposts_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE posts SET reposts_count = reposts_count + 1 WHERE id = NEW.original_post_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE posts SET reposts_count = reposts_count - 1 WHERE id = OLD.original_post_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER reposts_count_trigger
+AFTER INSERT OR DELETE ON reposts
+FOR EACH ROW EXECUTE FUNCTION update_post_reposts_count();
+
+-- Trigger لزيادة likes_count في جدول comments
+CREATE OR REPLACE FUNCTION update_comment_likes_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE comments SET likes = likes + 1 WHERE id = NEW.comment_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE comments SET likes = likes - 1 WHERE id = OLD.comment_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER comment_likes_count_trigger
+AFTER INSERT OR DELETE ON comment_likes
+FOR EACH ROW EXECUTE FUNCTION update_comment_likes_count();
+
+-- Trigger لزيادة likes_count في messages
+CREATE OR REPLACE FUNCTION update_message_likes_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE messages SET likes = likes + 1 WHERE id = NEW.message_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE messages SET likes = likes - 1 WHERE id = OLD.message_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER message_likes_count_trigger
+AFTER INSERT OR DELETE ON message_likes
+FOR EACH ROW EXECUTE FUNCTION update_message_likes_count();
+
+-- ============================================================
+-- 5. سياسات أمان مستوى الصف (RLS)
+-- ============================================================
+
+-- تفعيل RLS على جميع الجداول
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reposts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comment_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE follows ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conversation_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE message_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE groups_table ENABLE ROW LEVEL SECURITY;
+ALTER TABLE group_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE group_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE message_requests ENABLE ROW LEVEL SECURITY;
+
+-- سياسات المستخدمين
+CREATE POLICY "يمكن لأي شخص رؤية المستخدمين" ON users FOR SELECT USING (true);
+CREATE POLICY "يمكن للمستخدم تحديث بياناته فقط" ON users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "لا يمكن حذف المستخدمين عبر API" ON users FOR DELETE USING (false);
+
+-- سياسات المنشورات
+CREATE POLICY "رؤية المنشورات غير المخفية" ON posts FOR SELECT USING (hidden = false OR auth.uid() = author_id);
+CREATE POLICY "إنشاء منشور" ON posts FOR INSERT WITH CHECK (auth.uid() = author_id);
+CREATE POLICY "تحديث منشوراتك فقط" ON posts FOR UPDATE USING (auth.uid() = author_id);
+CREATE POLICY "حذف منشوراتك فقط" ON posts FOR DELETE USING (auth.uid() = author_id);
+
+-- سياسات الإعجابات
+CREATE POLICY "رؤية الإعجابات" ON likes FOR SELECT USING (true);
+CREATE POLICY "إنشاء إعجاب" ON likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "حذف إعجابك فقط" ON likes FOR DELETE USING (auth.uid() = user_id);
+
+-- سياسات المفضلة
+CREATE POLICY "رؤية المفضلة" ON favorites FOR SELECT USING (true);
+CREATE POLICY "إنشاء مفضلة" ON favorites FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "حذف مفضلتك فقط" ON favorites FOR DELETE USING (auth.uid() = user_id);
+
+-- سياسات إعادة النشر
+CREATE POLICY "رؤية عمليات إعادة النشر" ON reposts FOR SELECT USING (true);
+CREATE POLICY "إنشاء إعادة نشر" ON reposts FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "حذف إعادة النشر" ON reposts FOR DELETE USING (auth.uid() = user_id);
+
+-- سياسات التعليقات
+CREATE POLICY "رؤية التعليقات" ON comments FOR SELECT USING (true);
+CREATE POLICY "إنشاء تعليق" ON comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "تعديل تعليقك فقط" ON comments FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "حذف تعليقك فقط" ON comments FOR DELETE USING (auth.uid() = user_id);
+
+-- سياسات إعجابات التعليقات
+CREATE POLICY "رؤية إعجابات التعليقات" ON comment_likes FOR SELECT USING (true);
+CREATE POLICY "إنشاء إعجاب تعليق" ON comment_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "حذف إعجاب تعليقك" ON comment_likes FOR DELETE USING (auth.uid() = user_id);
+
+-- سياسات المتابعات
+CREATE POLICY "رؤية المتابعات" ON follows FOR SELECT USING (true);
+CREATE POLICY "متابعة/إلغاء متابعة" ON follows FOR INSERT WITH CHECK (auth.uid() = follower_id);
+CREATE POLICY "إلغاء متابعتك فقط" ON follows FOR DELETE USING (auth.uid() = follower_id);
+
+-- سياسات المحادثات والمشاركين
+CREATE POLICY "رؤية المحادثات التي تشارك فيها" ON conversations FOR SELECT USING (
+  EXISTS (SELECT 1 FROM conversation_participants WHERE conversation_id = id AND user_id = auth.uid())
+);
+CREATE POLICY "إنشاء محادثة" ON conversations FOR INSERT WITH CHECK (true);
+CREATE POLICY "رؤية المشاركين" ON conversation_participants FOR SELECT USING (true);
+CREATE POLICY "إضافة مشارك" ON conversation_participants FOR INSERT WITH CHECK (true);
+CREATE POLICY "حذف مشارك" ON conversation_participants FOR DELETE USING (true);
+
+-- سياسات الرسائل الخاصة
+CREATE POLICY "رؤية الرسائل في محادثاتك" ON messages FOR SELECT USING (
+  EXISTS (SELECT 1 FROM conversation_participants WHERE conversation_id = messages.conversation_id AND user_id = auth.uid())
+);
+CREATE POLICY "إرسال رسالة" ON messages FOR INSERT WITH CHECK (sender_id = auth.uid());
+CREATE POLICY "تحديث رسالتك فقط" ON messages FOR UPDATE USING (sender_id = auth.uid());
+CREATE POLICY "حذف رسالتك فقط (soft delete)" ON messages FOR DELETE USING (sender_id = auth.uid());
+
+-- سياسات إعجابات الرسائل
+CREATE POLICY "رؤية إعجابات الرسائل" ON message_likes FOR SELECT USING (true);
+CREATE POLICY "إعجاب برسالة" ON message_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "إلغاء إعجاب برسالتك" ON message_likes FOR DELETE USING (auth.uid() = user_id);
+
+-- سياسات المجموعات
+CREATE POLICY "رؤية المجموعات التي تشارك فيها" ON groups_table FOR SELECT USING (
+  EXISTS (SELECT 1 FROM group_members WHERE group_id = id AND user_id = auth.uid())
+);
+CREATE POLICY "إنشاء مجموعة" ON groups_table FOR INSERT WITH CHECK (auth.uid() = created_by);
+CREATE POLICY "رؤية أعضاء المجموعة" ON group_members FOR SELECT USING (true);
+CREATE POLICY "الانضمام إلى مجموعة" ON group_members FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "مغادرة المجموعة" ON group_members FOR DELETE USING (auth.uid() = user_id);
+
+-- سياسات رسائل المجموعات
+CREATE POLICY "رؤية رسائل المجموعة" ON group_messages FOR SELECT USING (
+  EXISTS (SELECT 1 FROM group_members WHERE group_id = group_messages.group_id AND user_id = auth.uid())
+);
+CREATE POLICY "إرسال رسالة مجموعة" ON group_messages FOR INSERT WITH CHECK (sender_id = auth.uid());
+CREATE POLICY "تعديل رسالتك في المجموعة" ON group_messages FOR UPDATE USING (sender_id = auth.uid());
+CREATE POLICY "حذف رسالتك في المجموعة" ON group_messages FOR DELETE USING (sender_id = auth.uid());
+
+-- سياسات القصص
+CREATE POLICY "رؤية القصص غير المنتهية" ON stories FOR SELECT USING (expires_at > now());
+CREATE POLICY "إنشاء قصة" ON stories FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "حذف قصتك فقط" ON stories FOR DELETE USING (auth.uid() = user_id);
+
+-- سياسات روابط التواصل
+CREATE POLICY "رؤية روابط المستخدمين" ON user_links FOR SELECT USING (true);
+CREATE POLICY "إدارة روابطك" ON user_links FOR ALL USING (auth.uid() = user_id);
+
+-- سياسات الإشعارات
+CREATE POLICY "رؤية إشعاراتك فقط" ON notifications FOR SELECT USING (recipient_id = auth.uid());
+CREATE POLICY "إنشاء إشعار (للمستخدمين)" ON notifications FOR INSERT WITH CHECK (true);
+CREATE POLICY "تحديث حالة المشاهدة" ON notifications FOR UPDATE USING (recipient_id = auth.uid());
+
+-- سياسات إشعارات النظام (للجميع)
+CREATE POLICY "رؤية إشعارات النظام" ON system_notifications FOR SELECT USING (true);
+
+-- سياسات طلبات المراسلة
+CREATE POLICY "رؤية الطلبات المرسلة أو المستلمة" ON message_requests FOR SELECT USING (from_user = auth.uid() OR to_user = auth.uid());
+CREATE POLICY "إنشاء طلب مراسلة" ON message_requests FOR INSERT WITH CHECK (from_user = auth.uid());
+CREATE POLICY "تحديث الطلب (قبول/رفض)" ON message_requests FOR UPDATE USING (to_user = auth.uid());
+
+-- ============================================================
+-- 6. بيانات أولية (Seed data)
+-- ============================================================
+
+-- مستخدم نظام ترحيبي (يُستخدم في common.js)
+INSERT INTO users (id, username, full_name, avatar, verified, is_guest)
+VALUES ('a1000000-0000-0000-0000-000000000005', 'RamzX_Assistant', 'مساعد Ramz-X', 'https://randomuser.me/api/portraits/lego/1.jpg', true, false)
+ON CONFLICT (id) DO NOTHING;
+
+-- محادثة ترحيبية
+INSERT INTO conversations (id) VALUES ('d1000000-0000-0000-0000-000000000001')
+ON CONFLICT (id) DO NOTHING;
+
+-- مشاركون فيها: المستخدم النظامي (سيتم إضافة الضيوف لاحقاً عبر الكود)
+INSERT INTO conversation_participants (conversation_id, user_id)
+VALUES ('d1000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000005')
+ON CONFLICT (conversation_id, user_id) DO NOTHING;
+
+-- رسالة ترحيبية (إذا لم تكن موجودة)
+INSERT INTO messages (id, conversation_id, sender_id, text)
+VALUES (gen_random_uuid(), 'd1000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000005', '👋 مرحباً بك في Ramz‑X! هذه محادثة ترحيبية. يمكنك التواصل مع الأصدقاء هنا.')
+ON CONFLICT (id) DO NOTHING;
+
+-- إنشاء دالة RPC لزيادة المشاهدات (للاستدعاء من home.html)
+CREATE OR REPLACE FUNCTION increment_views_rpc(post_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE posts SET views_count = views_count + 1 WHERE id = post_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- تم الانتهاء من إنشاء قاعدة البيانات بالكامل
+-- ✅ يمكنك الآن اختبار التطبيق

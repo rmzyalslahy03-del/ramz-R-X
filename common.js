@@ -15,6 +15,7 @@
 // 9. دوال الإشعارات العامة (عداد أيقونة صندوق الوارد، إشعار منبثق علوي)
 // 10. تهيئة تلقائية عند تحميل الصفحة (ثيم، Service Worker)
 // 11. معالجة أخطاء Service Worker و Notification
+// 12. إشعارات علوية فورية عند تفاعل الآخرين مع محتواك (Realtime)
 
 // ==================== 0. Polyfill للمتصفحات القديمة ====================
 // crypto.randomUUID غير مدعوم في Safari 13 والإصدارات الأقدم
@@ -635,6 +636,136 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // تسجيل Service Worker مع معالجة الأخطاء
     registerServiceWorker();
+});
+
+// ==================== 11. الإشعارات العلوية الفورية عند تفاعل الآخرين (Realtime) ====================
+let realtimeChannels = [];
+
+/**
+ * الاشتراك في الأحداث المباشرة للتفاعلات مع محتوى المستخدم
+ */
+function subscribeToRealtimeNotifications() {
+    const user = getCurrentUser();
+    if (!user) return;
+
+    // إلغاء الاشتراكات السابقة لتجنب التكرار
+    realtimeChannels.forEach(ch => {
+        try { supabase.removeChannel(ch); } catch(e) {}
+    });
+    realtimeChannels = [];
+
+    // 1. الاستماع للإعجابات الجديدة
+    const likesChannel = supabase
+        .channel('realtime-likes')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, async (payload) => {
+            const { post_id, user_id } = payload.new;
+            if (user_id === user.id) return; // تجاهل إعجاب المستخدم بنفسه
+            // التحقق مما إذا كان المنشور مملوكاً للمستخدم الحالي
+            const { data: post } = await supabase
+                .from('posts')
+                .select('author_id')
+                .eq('id', post_id)
+                .single();
+            if (post && post.author_id === user.id) {
+                const { data: actor } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('id', user_id)
+                    .single();
+                if (actor) {
+                    showTopNotification(`❤️ ${actor.username} أعجب بمنشورك`, 'info');
+                }
+            }
+        })
+        .subscribe();
+
+    // 2. الاستماع للتعليقات الجديدة
+    const commentsChannel = supabase
+        .channel('realtime-comments')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, async (payload) => {
+            const { post_id, user_id } = payload.new;
+            if (user_id === user.id) return;
+            const { data: post } = await supabase
+                .from('posts')
+                .select('author_id')
+                .eq('id', post_id)
+                .single();
+            if (post && post.author_id === user.id) {
+                const { data: actor } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('id', user_id)
+                    .single();
+                if (actor) {
+                    showTopNotification(`💬 ${actor.username} علّق على منشورك`, 'info');
+                }
+            }
+        })
+        .subscribe();
+
+    // 3. الاستماع للمتابعات الجديدة
+    const followsChannel = supabase
+        .channel('realtime-follows')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'follows' }, async (payload) => {
+            const { follower_id, following_id } = payload.new;
+            if (following_id === user.id && follower_id !== user.id) {
+                const { data: actor } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('id', follower_id)
+                    .single();
+                if (actor) {
+                    showTopNotification(`👤 ${actor.username} تابعك`, 'info');
+                }
+            }
+        })
+        .subscribe();
+
+    // 4. الاستماع لإعادة النشر الجديدة
+    const repostsChannel = supabase
+        .channel('realtime-reposts')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reposts' }, async (payload) => {
+            const { post_id, user_id } = payload.new;
+            if (user_id === user.id) return;
+            const { data: post } = await supabase
+                .from('posts')
+                .select('author_id')
+                .eq('id', post_id)
+                .single();
+            if (post && post.author_id === user.id) {
+                const { data: actor } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('id', user_id)
+                    .single();
+                if (actor) {
+                    showTopNotification(`🔄 ${actor.username} أعاد نشر منشورك`, 'info');
+                }
+            }
+        })
+        .subscribe();
+
+    realtimeChannels.push(likesChannel, commentsChannel, followsChannel, repostsChannel);
+    console.log('✅ تم تفعيل الإشعارات الفورية للتفاعلات');
+}
+
+// محاولة الاشتراك بعد تحميل الصفحة (مع تأخير بسيط لضمان وجود المستخدم)
+setTimeout(() => {
+    if (getCurrentUser()) {
+        subscribeToRealtimeNotifications();
+    } else {
+        // إعادة المحاولة بعد ثانيتين إذا لم يكن المستخدم جاهزاً
+        setTimeout(() => {
+            if (getCurrentUser()) subscribeToRealtimeNotifications();
+        }, 2000);
+    }
+}, 500);
+
+// إعادة الاشتراك عند تغيير المستخدم (مثل تسجيل الدخول أو الخروج)
+window.addEventListener('storage', (e) => {
+    if (e.key === 'currentUser') {
+        setTimeout(() => subscribeToRealtimeNotifications(), 500);
+    }
 });
 
 // ==================== نهاية الملف ====================

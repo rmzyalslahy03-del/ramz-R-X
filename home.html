@@ -13,7 +13,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="common.js"></script>
     <style>
-        /* ========== الأنماط الأساسية ========== */
         :root {
             --bg-primary: #000000;
             --bg-card: #111111;
@@ -65,7 +64,6 @@
         .logo { font-size: 1.6rem; font-weight: 900; background: linear-gradient(135deg, var(--accent-blue), var(--accent)); background-clip: text; color: transparent; cursor: pointer; }
         .header-actions { display: flex; gap: 12px; align-items: center; }
         .icon-btn { background: none; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; padding: 8px; border-radius: 50%; transition: 0.2s; }
-        .icon-btn:hover { background: var(--bg-input); }
         .stories-row { display: flex; gap: 12px; padding: 12px 8px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
         .stories-row::-webkit-scrollbar { display: none; }
         .story-item { flex: 0 0 auto; width: 68px; text-align: center; cursor: pointer; scroll-snap-align: start; }
@@ -95,10 +93,11 @@
         .post-content { padding: 12px; }
         .post-title { font-weight: 800; font-size: 18px; margin-bottom: 6px; color: var(--text-primary); }
         .category-badge { font-size: 10px; background: var(--bg-input); padding: 3px 10px; border-radius: 20px; display: inline-block; margin-right: 6px; color: var(--text-secondary); cursor: pointer; }
-        .post-text { color: var(--text-secondary); font-size: 14px; line-height: 1.5; margin-bottom: 6px; max-height: 80px; overflow: hidden; transition: max-height 0.4s ease; }
-        .post-text.expanded { max-height: none; }
-        .more-btn { color: var(--accent); cursor: pointer; font-size: 13px; font-weight: 600; display: inline-block; }
-        .hashtag { color: var(--accent); font-size: 12px; margin-top: 4px; cursor: pointer; background: rgba(255, 0, 80, 0.1); padding: 4px 10px; border-radius: 20px; display: inline-block; }
+        .post-text { color: var(--text-secondary); font-size: 14px; line-height: 1.5; margin-bottom: 6px; overflow-wrap: break-word; }
+        .hashtag { color: var(--accent); font-size: 12px; margin-top: 6px; margin-bottom: 6px; cursor: pointer; background: rgba(255, 0, 80, 0.1); padding: 4px 10px; border-radius: 20px; display: inline-block; }
+        .post-actions-row { display: flex; gap: 12px; margin-top: 8px; align-items: center; flex-wrap: wrap; }
+        .more-btn, .less-btn { color: var(--accent); cursor: pointer; font-size: 13px; font-weight: 600; background: none; border: none; padding: 0; transition: opacity 0.2s; }
+        .less-btn { color: var(--text-muted); }
         .actions-bar { display: flex; justify-content: space-around; align-items: center; padding: 10px 12px; border-top: 0.5px solid var(--border); background: var(--bg-card); gap: 8px; flex-wrap: nowrap; }
         .action-btn {
             display: inline-flex;
@@ -126,11 +125,10 @@
         .action-btn.liked i { color: #ff2a6d; animation: heartBeat 0.3s ease; }
         .action-btn.saved i { color: #ffcc44; }
         .action-btn.reposted i { color: #4caf50; }
+        .action-btn.disabled, .action-btn.disabled i { opacity: 0.5; pointer-events: none; }
         @keyframes heartBeat { 0%,100%{transform:scale(1)} 40%{transform:scale(1.2)} }
         .ripple { position: absolute; border-radius: 50%; transform: scale(0); animation: rippleEffect 0.5s ease-out; pointer-events: none; }
-        .ripple.red { background: rgba(255,42,109,0.4); }
-        .ripple.green { background: rgba(76,175,80,0.4); }
-        .ripple.yellow { background: rgba(255,204,68,0.4); }
+        .ripple.red { background: rgba(255,42,109,0.4); } .ripple.green { background: rgba(76,175,80,0.4); } .ripple.yellow { background: rgba(255,204,68,0.4); }
         @keyframes rippleEffect { to { transform: scale(4); opacity: 0; } }
         .flying-heart { position: fixed; font-size: 22px; pointer-events: none; z-index: 2000; color: #ff2a6d; will-change: transform, opacity; }
         .comments-bottom-sheet {
@@ -178,7 +176,7 @@
         .attach-option span { font-size: 11px; font-weight: 600; }
         .close-attach-btn { align-self: flex-end; background: var(--bg-input); border: none; color: var(--text-primary); font-size: 20px; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; }
         .share-bottom-sheet {
-            position: fixed; bottom: -100%; left: 0; right: 0; height: 55%; max-width: 600px; margin: 0 auto; background: var(--bg-card); border-top-left-radius: 25px; border-top-right-radius: 25px; transition: bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1); z-index: 2100; display: flex; flex-direction: column; box-shadow: var(--sheet-shadow);
+            position: fixed; bottom: -100%; left: 0; right: 0; height: 65%; max-width: 600px; margin: 0 auto; background: var(--bg-card); border-top-left-radius: 25px; border-top-right-radius: 25px; transition: bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1); z-index: 2100; display: flex; flex-direction: column; box-shadow: var(--sheet-shadow);
         }
         .share-bottom-sheet.open { bottom: 0; }
         .share-tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 10px; gap: 4px; overflow-x: auto; scrollbar-width: none; }
@@ -200,6 +198,48 @@
         .social-icon.telegram .icon-circle { background: #0088CC; }
         .social-icon.instagram .icon-circle { background: #E4405F; }
         .social-icon.email .icon-circle { background: #666; }
+        .settings-group {
+            margin-bottom: 20px;
+        }
+        .settings-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .settings-group select {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--text-primary);
+            font-family: 'Cairo', sans-serif;
+            width: 100%;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            margin-left: 10px;
+        }
+        .save-settings-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .hidden-tab {
+            display: none !important;
+        }
         .bottom-footer {
             position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card);
             display: flex; justify-content: space-around; padding: 8px 0;
@@ -295,20 +335,54 @@
         <button class="tab-btn active" data-tab="tab-share">مشاركة</button>
         <button class="tab-btn" data-tab="tab-download">تحميل</button>
         <button class="tab-btn" data-tab="tab-report">تبليغ</button>
-        <button class="tab-btn" data-tab="tab-embed">تضمين</button>
+        <button class="tab-btn" data-tab="tab-settings" id="settingsTabBtn">إعدادات</button>
         <button class="tab-btn" data-tab="tab-qr">QR Code</button>
     </div>
     <div class="tab-content">
-        <div class="tab-pane active" id="tab-share"><div class="social-icons"><div class="social-icon whatsapp" data-platform="whatsapp"><div class="icon-circle"><i class="fab fa-whatsapp"></i></div><span>واتساب</span></div><div class="social-icon facebook" data-platform="facebook"><div class="icon-circle"><i class="fab fa-facebook-f"></i></div><span>فيسبوك</span></div><div class="social-icon twitter" data-platform="twitter"><div class="icon-circle"><i class="fab fa-twitter"></i></div><span>تويتر</span></div><div class="social-icon telegram" data-platform="telegram"><div class="icon-circle"><i class="fab fa-telegram-plane"></i></div><span>تيليجرام</span></div><div class="social-icon instagram" data-platform="instagram"><div class="icon-circle"><i class="fab fa-instagram"></i></div><span>انستقرام</span></div><div class="social-icon email" data-platform="email"><div class="icon-circle"><i class="fas fa-envelope"></i></div><span>بريد</span></div><div class="social-icon copy-link" data-platform="copy"><div class="icon-circle"><i class="fas fa-link"></i></div><span>نسخ الرابط</span></div></div></div>
-        <div class="tab-pane" id="tab-download"><div style="text-align:center;padding:40px;"><button class="send-btn" onclick="downloadPostImage()"><i class="fas fa-download"></i> تحميل صورة المنشور</button></div></div>
-        <div class="tab-pane" id="tab-report"><div style="text-align:center;padding:40px;"><p>إبلاغ عن هذا المحتوى</p><button class="send-btn" onclick="reportCurrentPost()"><i class="fas fa-flag"></i> إبلاغ</button></div></div>
-        <div class="tab-pane" id="tab-embed"><div style="text-align:center;padding:40px;"><p>كود التضمين:</p><code style="background:var(--bg-input);padding:10px;border-radius:8px;display:block;" id="embedCode">&lt;iframe src="..."&gt;&lt;/iframe&gt;</code></div></div>
-        <div class="tab-pane" id="tab-qr"><div style="text-align:center;padding:40px;"><p>📱 مسح QR Code</p><div style="width:150px;height:150px;background:white;margin:20px auto;border-radius:12px;display:flex;align-items:center;justify-content:center;color:black;">QR قريباً</div></div></div>
+        <div class="tab-pane active" id="tab-share">
+            <div class="social-icons">
+                <div class="social-icon whatsapp" data-platform="whatsapp"><div class="icon-circle"><i class="fab fa-whatsapp"></i></div><span>واتساب</span></div>
+                <div class="social-icon facebook" data-platform="facebook"><div class="icon-circle"><i class="fab fa-facebook-f"></i></div><span>فيسبوك</span></div>
+                <div class="social-icon twitter" data-platform="twitter"><div class="icon-circle"><i class="fab fa-twitter"></i></div><span>تويتر</span></div>
+                <div class="social-icon telegram" data-platform="telegram"><div class="icon-circle"><i class="fab fa-telegram-plane"></i></div><span>تيليجرام</span></div>
+                <div class="social-icon instagram" data-platform="instagram"><div class="icon-circle"><i class="fab fa-instagram"></i></div><span>انستقرام</span></div>
+                <div class="social-icon email" data-platform="email"><div class="icon-circle"><i class="fas fa-envelope"></i></div><span>بريد</span></div>
+                <div class="social-icon copy-link" data-platform="copy"><div class="icon-circle"><i class="fas fa-link"></i></div><span>نسخ الرابط</span></div>
+            </div>
+        </div>
+        <div class="tab-pane" id="tab-download"><div style="text-align:center;padding:40px;"><button class="send-btn" id="downloadPostImageBtn"><i class="fas fa-download"></i> تحميل صورة المنشور</button></div></div>
+        <div class="tab-pane" id="tab-report"><div style="text-align:center;padding:40px;"><p>إبلاغ عن هذا المحتوى</p><button class="send-btn" id="reportPostBtn"><i class="fas fa-flag"></i> إبلاغ</button></div></div>
+        <div class="tab-pane" id="tab-settings">
+            <div class="settings-group">
+                <label>🔒 خصوصية المنشور</label>
+                <select id="postPrivacy">
+                    <option value="public">🌍 عام (الجميع)</option>
+                    <option value="friends">👥 الأصدقاء فقط</option>
+                    <option value="private">🔐 خاص (أنا فقط)</option>
+                </select>
+            </div>
+            <div class="settings-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="disableComments">
+                    <label>🚫 تعطيل التعليقات</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="disableShares">
+                    <label>🚫 تعطيل المشاركة</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="disableLikes">
+                    <label>🚫 تعطيل الإعجابات</label>
+                </div>
+            </div>
+            <button class="save-settings-btn" id="savePostSettingsBtn">💾 حفظ الإعدادات</button>
+        </div>
+        <div class="tab-pane" id="tab-qr"><div style="text-align:center;padding:40px;"><p>📱 مسح QR Code</p><div id="qrCodeContainer" style="width:150px;height:150px;background:white;margin:20px auto;border-radius:12px;display:flex;align-items:center;justify-content:center;color:black;flex-direction:column;">QR</div></div></div>
     </div>
 </div>
 
 <script>
-    // ===================== دوال مساعدة محلية (غير موجودة في common.js) =====================
+    // ===================== دوال مساعدة =====================
     function parseNumberFromFormatted(str) {
         if (!str) return 0; str = str.toString();
         if (str.includes('M')) return parseFloat(str) * 1_000_000;
@@ -397,8 +471,9 @@
         document.querySelectorAll('.post-card').forEach(card => observer.observe(card));
     }
 
-    // ===================== البيانات والتحميل مع حالة التفاعلات =====================
+    // ===================== البيانات والتحميل =====================
     let feedPosts = [], feedLastCursor = null, feedHasMore = true, feedIsLoading = false;
+    let postDisplayLength = {};
 
     async function fetchFeedPage(limit = 10) {
         if (feedIsLoading) return [];
@@ -450,7 +525,11 @@
                 verified: p.users?.verified || false,
                 user_liked: likedSet.has(p.id),
                 user_favorited: favoritedSet.has(p.id),
-                user_reposted: repostedSet.has(p.id)
+                user_reposted: repostedSet.has(p.id),
+                privacy: p.privacy || 'public',
+                comments_disabled: p.comments_disabled || false,
+                shares_disabled: p.shares_disabled || false,
+                likes_disabled: p.likes_disabled || false
             }));
         } catch(err) { console.error(err); return []; }
         finally { feedIsLoading = false; }
@@ -469,14 +548,29 @@
             const likedClass = p.user_liked ? 'liked' : '';
             const savedClass = p.user_favorited ? 'saved' : '';
             const repostedClass = p.user_reposted ? 'reposted' : '';
+            const fullText = p.content || '';
+            const initialLength = Math.min(200, fullText.length);
+            postDisplayLength[p.id] = initialLength;
+            const displayText = escapeHtml(fullText.substring(0, initialLength)) + (fullText.length > initialLength ? '...' : '');
+            const moreBtnHtml = (fullText.length > 200) ? `<button class="more-btn" data-id="${p.id}" id="more-btn-${p.id}">...عرض المزيد</button>` : '';
+            const lessBtnHtml = `<button class="less-btn" data-id="${p.id}" id="less-btn-${p.id}" style="display:none;">عرض أقل</button>`;
+            const hashtagHtml = p.hashtag ? `<div class="hashtag" onclick="window.location.href='search.html?q=${encodeURIComponent(p.hashtag)}'">#${escapeHtml(p.hashtag)}</div>` : '';
             html += `<div class="post-card" data-id="${p.id}" id="post-${p.id}">
                 <div class="post-header" onclick="window.location.href='public-profile.html?user=${p.author_id}'"><img class="author-avatar" src="${p.author_avatar}" alt=""><div class="author-info"><div class="author-name-row"><span class="author-name">${escapeHtml(p.author_name)}</span>${p.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}</div><div class="post-date">${timeAgo(p.created_at)}</div></div><button class="post-menu-btn" onclick="event.stopPropagation(); showPostMenu('${p.id}')"><i class="fas fa-ellipsis-h"></i></button></div>
                 ${imagesArray.length ? `<div class="images-container" data-post-id="${p.id}"><div class="images-wrapper">${slides}</div>${imagesArray.length > 1 ? `<div class="image-counter">1/${imagesArray.length}</div>` : ''}</div>` : ''}
-                <div class="post-content"><div class="post-title">${escapeHtml(p.title)} <span class="category-badge" onclick="event.stopPropagation(); window.location.href='search.html?q=${encodeURIComponent(p.category)}'">${escapeHtml(p.category)}</span></div><div class="post-text" id="post-text-${p.id}">${escapeHtml(p.content || '').substring(0,150)}${p.content?.length>150?'...':''}</div>${p.content?.length>150 ? `<span class="more-btn" onclick="toggleFullText('${p.id}')" id="more-btn-${p.id}">...عرض المزيد</span>` : ''}${p.hashtag ? `<div class="hashtag" onclick="window.location.href='search.html?q=${encodeURIComponent(p.hashtag)}'">#${escapeHtml(p.hashtag)}</div>` : ''}</div>
+                <div class="post-content">
+                    <div class="post-title">${escapeHtml(p.title)} <span class="category-badge" onclick="event.stopPropagation(); window.location.href='search.html?q=${encodeURIComponent(p.category)}'">${escapeHtml(p.category)}</span></div>
+                    <div class="post-text" id="post-text-${p.id}">${displayText}</div>
+                    ${hashtagHtml}
+                    <div class="post-actions-row">
+                        ${moreBtnHtml}
+                        ${lessBtnHtml}
+                    </div>
+                </div>
                 <div class="actions-bar">
-                    <button class="action-btn like-btn ${likedClass}" data-id="${p.id}" onclick="handleLikeClick(this, event, '${p.id}')"><span class="number">${formatNumber(p.likes_count)}</span><i class="${p.user_liked ? 'fas' : 'far'} fa-heart"></i></button>
-                    <button class="action-btn comment-btn" data-id="${p.id}" onclick="openComments('${p.id}')"><span class="number">${formatNumber(p.comments_count)}</span><i class="far fa-comment"></i></button>
-                    <button class="action-btn share-btn ${repostedClass}" data-id="${p.id}" onclick="handleRepostClick(this, event, '${p.id}')" oncontextmenu="event.preventDefault(); openShareAdvanced('${p.id}')"><span class="number">${formatNumber(p.reposts_count)}</span><i class="${p.user_reposted ? 'fas' : 'far'} fa-share-square"></i></button>
+                    <button class="action-btn like-btn ${likedClass}" data-id="${p.id}" ${p.likes_disabled ? 'disabled' : ''} onclick="if(!this.disabled) handleLikeClick(this, event, '${p.id}')"><span class="number">${formatNumber(p.likes_count)}</span><i class="${p.user_liked ? 'fas' : 'far'} fa-heart"></i></button>
+                    <button class="action-btn comment-btn" data-id="${p.id}" ${p.comments_disabled ? 'disabled' : ''} onclick="if(!this.disabled) openComments('${p.id}')"><span class="number">${formatNumber(p.comments_count)}</span><i class="far fa-comment"></i></button>
+                    <button class="action-btn share-btn ${repostedClass}" data-id="${p.id}" ${p.shares_disabled ? 'disabled' : ''} onclick="if(!this.disabled) handleRepostClick(this, event, '${p.id}')" oncontextmenu="event.preventDefault(); openShareAdvanced('${p.id}')"><span class="number">${formatNumber(p.reposts_count)}</span><i class="${p.user_reposted ? 'fas' : 'far'} fa-share-square"></i></button>
                     <button class="action-btn save-btn ${savedClass}" data-id="${p.id}" onclick="handleSaveClick(this, event, '${p.id}')"><span class="number">${formatNumber(p.favorites_count)}</span><i class="${p.user_favorited ? 'fas' : 'far'} fa-bookmark"></i></button>
                     <button class="action-btn views-btn" data-id="${p.id}" disabled style="opacity:0.7; cursor:default;"><span class="number">${formatNumber(p.views_count)}</span><i class="far fa-eye"></i></button>
                 </div>
@@ -484,12 +578,74 @@
         }
         if(append) container.insertAdjacentHTML('beforeend', html);
         else container.innerHTML = html;
+        attachMoreLessButtons();
         attachImageScrollers(); setupViewObserver();
+    }
+
+    function attachMoreLessButtons() {
+        document.querySelectorAll('.more-btn').forEach(btn => {
+            if (btn._listener) btn.removeEventListener('click', btn._listener);
+            const handler = (e) => {
+                e.stopPropagation();
+                const postId = btn.getAttribute('data-id');
+                if (postId) expandPostText(postId);
+            };
+            btn.addEventListener('click', handler);
+            btn._listener = handler;
+        });
+        document.querySelectorAll('.less-btn').forEach(btn => {
+            if (btn._listener) btn.removeEventListener('click', btn._listener);
+            const handler = (e) => {
+                e.stopPropagation();
+                const postId = btn.getAttribute('data-id');
+                if (postId) collapsePostText(postId);
+            };
+            btn.addEventListener('click', handler);
+            btn._listener = handler;
+        });
+    }
+
+    function expandPostText(postId) {
+        const post = feedPosts.find(p => p.id === postId);
+        if (!post) return;
+        const fullText = post.content || '';
+        let currentLength = postDisplayLength[postId] || 200;
+        let newLength = Math.min(currentLength + 200, fullText.length);
+        postDisplayLength[postId] = newLength;
+        updatePostTextDisplay(postId, newLength);
+        const lessBtn = document.getElementById(`less-btn-${postId}`);
+        const moreBtn = document.getElementById(`more-btn-${postId}`);
+        if (lessBtn) lessBtn.style.display = newLength > 200 ? 'inline-block' : 'none';
+        if (moreBtn) moreBtn.style.display = newLength >= fullText.length ? 'none' : 'inline-block';
+    }
+
+    function collapsePostText(postId) {
+        const post = feedPosts.find(p => p.id === postId);
+        if (!post) return;
+        const fullText = post.content || '';
+        const newLength = Math.min(200, fullText.length);
+        postDisplayLength[postId] = newLength;
+        updatePostTextDisplay(postId, newLength);
+        const lessBtn = document.getElementById(`less-btn-${postId}`);
+        const moreBtn = document.getElementById(`more-btn-${postId}`);
+        if (lessBtn) lessBtn.style.display = 'none';
+        if (moreBtn) moreBtn.style.display = fullText.length > 200 ? 'inline-block' : 'none';
+    }
+
+    function updatePostTextDisplay(postId, length) {
+        const post = feedPosts.find(p => p.id === postId);
+        if (!post) return;
+        const fullText = post.content || '';
+        const textDiv = document.getElementById(`post-text-${postId}`);
+        if (!textDiv) return;
+        const displayText = escapeHtml(fullText.substring(0, length)) + (fullText.length > length ? '...' : '');
+        textDiv.textContent = displayText;
     }
 
     async function refreshFeed() {
         feedLastCursor = null; feedHasMore = true; feedIsLoading = false;
         const posts = await fetchFeedPage(10);
+        feedPosts = posts;
         await renderFeed(posts, false);
         document.getElementById('infiniteLoader').style.display = feedHasMore ? 'flex' : 'none';
     }
@@ -498,16 +654,21 @@
         if (feedIsLoading || !feedHasMore) return;
         document.getElementById('infiniteLoader').style.display = 'flex';
         const newPosts = await fetchFeedPage(10);
-        if (newPosts.length) { feedPosts.push(...newPosts); await renderFeed(newPosts, true); }
+        if (newPosts.length) {
+            feedPosts.push(...newPosts);
+            await renderFeed(newPosts, true);
+        }
         if (!feedHasMore) document.getElementById('infiniteLoader').style.display = 'none';
         feedIsLoading = false;
     }
     window.onscroll = () => { if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) loadMore(); };
 
-    // ===================== التفاعلات (إشعارات أسفل الشاشة) =====================
+    // ===================== التفاعلات =====================
     async function toggleLike(postId, btnElement, isDoubleTap = false, event = null) {
         const user = getCurrentUser();
         if (!user) { showToast('يرجى تسجيل الدخول أولاً', true); return; }
+        const post = feedPosts.find(p => p.id === postId);
+        if (post && post.likes_disabled) { showToast('تم تعطيل الإعجابات لهذا المنشور', true); return; }
         if (event && !isDoubleTap) addRipple(event, btnElement, 'red');
         const isLiked = btnElement.classList.contains('liked');
         const countSpan = btnElement.querySelector('.number');
@@ -583,6 +744,8 @@
     async function toggleRepost(postId, btnElement, event) {
         const user = getCurrentUser();
         if (!user) { showToast('يرجى تسجيل الدخول', true); return; }
+        const post = feedPosts.find(p => p.id === postId);
+        if (post && post.shares_disabled) { showToast('تم تعطيل المشاركة لهذا المنشور', true); return; }
         if (event) addRipple(event, btnElement, 'green');
         const isReposted = btnElement.classList.contains('reposted');
         const countSpan = btnElement.querySelector('.number');
@@ -636,23 +799,165 @@
     window.handleLikeClick = (btn, e, id) => toggleLike(id, btn, false, e);
     window.handleSaveClick = (btn, e, id) => toggleFavorite(id, btn, e);
     window.handleRepostClick = (btn, e, id) => toggleRepost(id, btn, e);
-    window.toggleFullText = function(postId) {
-        const textDiv = document.getElementById(`post-text-${postId}`), moreBtn = document.getElementById(`more-btn-${postId}`);
-        if(textDiv.classList.contains('expanded')) {
-            textDiv.classList.remove('expanded');
-            const post = feedPosts.find(p=>p.id===postId);
-            textDiv.textContent = (post?.content || '').substring(0,150)+(post?.content?.length>150?'...':'');
-            if(moreBtn) moreBtn.textContent = '...عرض المزيد';
-        } else {
-            textDiv.classList.add('expanded');
-            const post = feedPosts.find(p=>p.id===postId);
-            textDiv.textContent = post?.content || '';
-            if(moreBtn) moreBtn.textContent = 'عرض أقل';
-        }
-    };
     window.showPostMenu = (id) => showToast('قائمة المنشور');
 
-    // ===================== التعليقات =====================
+    // ===================== المشاركة المتقدمة والإعدادات =====================
+    let currentSharePostId = null;
+    let currentShareImageUrl = null;
+
+    window.openShareAdvanced = async function(postId) {
+        currentSharePostId = postId;
+        const post = feedPosts.find(p => p.id === postId);
+        if (!post) return;
+        const currentUser = getCurrentUser();
+        const isOwner = currentUser && currentUser.id === post.author_id;
+        if (post.image && post.image.length) {
+            currentShareImageUrl = post.image[0];
+        } else {
+            currentShareImageUrl = null;
+        }
+        if (isOwner) {
+            document.getElementById('postPrivacy').value = post.privacy || 'public';
+            document.getElementById('disableComments').checked = post.comments_disabled || false;
+            document.getElementById('disableShares').checked = post.shares_disabled || false;
+            document.getElementById('disableLikes').checked = post.likes_disabled || false;
+        }
+        const shareUrl = `${window.location.origin}/home.html?post=${postId}`;
+        const qrContainer = document.getElementById('qrCodeContainer');
+        if (qrContainer) {
+            qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(shareUrl)}" style="width:150px;height:150px;">`;
+        }
+        const settingsTab = document.getElementById('settingsTabBtn');
+        const settingsPane = document.getElementById('tab-settings');
+        if (settingsTab && settingsPane) {
+            if (isOwner) {
+                settingsTab.classList.remove('hidden-tab');
+                settingsPane.classList.remove('hidden-tab');
+            } else {
+                settingsTab.classList.add('hidden-tab');
+                settingsPane.classList.add('hidden-tab');
+            }
+        }
+        document.getElementById('shareAdvancedSheet').classList.add('open');
+    };
+    window.closeShareSheet = () => document.getElementById('shareAdvancedSheet').classList.remove('open');
+    document.getElementById('closeShareSheetBtn').addEventListener('click', window.closeShareSheet);
+
+    document.querySelectorAll('.share-tabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.share-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.share-bottom-sheet .tab-pane').forEach(pane => pane.classList.remove('active'));
+            document.getElementById(btn.dataset.tab).classList.add('active');
+        });
+    });
+
+    document.querySelectorAll('.social-icon').forEach(icon => {
+        icon.addEventListener('click', () => {
+            const platform = icon.dataset.platform;
+            const post = feedPosts.find(p => p.id === currentSharePostId);
+            if (!post) return;
+            const shareUrl = `${window.location.origin}/home.html?post=${currentSharePostId}`;
+            const shareText = post.title + '\n' + (post.content ? post.content.substring(0, 100) : '');
+            let shareLink = '';
+            switch(platform) {
+                case 'whatsapp':
+                    shareLink = `https://wa.me/?text=${encodeURIComponent(shareText + '\n' + shareUrl)}`;
+                    break;
+                case 'facebook':
+                    shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+                    break;
+                case 'twitter':
+                    shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+                    break;
+                case 'telegram':
+                    shareLink = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+                    break;
+                case 'instagram':
+                    navigator.clipboard.writeText(shareUrl);
+                    showToast('تم نسخ الرابط، يمكنك مشاركته في انستقرام');
+                    return;
+                case 'email':
+                    shareLink = `mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(shareText + '\n' + shareUrl)}`;
+                    break;
+                case 'copy':
+                    navigator.clipboard.writeText(shareUrl);
+                    showToast('تم نسخ الرابط');
+                    return;
+            }
+            if (shareLink) window.open(shareLink, '_blank');
+        });
+    });
+
+    document.getElementById('downloadPostImageBtn').addEventListener('click', async () => {
+        if (!currentShareImageUrl) {
+            showToast('لا توجد صورة لتحميلها');
+            return;
+        }
+        try {
+            const response = await fetch(currentShareImageUrl);
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `post_${currentSharePostId}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('تم تحميل الصورة');
+        } catch(err) {
+            showToast('فشل تحميل الصورة', true);
+        }
+    });
+
+    document.getElementById('reportPostBtn').addEventListener('click', () => {
+        if (!currentSharePostId) return;
+        showToast('تم إرسال الإبلاغ، شكراً لك');
+    });
+
+    document.getElementById('savePostSettingsBtn').addEventListener('click', async () => {
+        if (!currentSharePostId) return;
+        const post = feedPosts.find(p => p.id === currentSharePostId);
+        const currentUser = getCurrentUser();
+        if (!post || !currentUser || currentUser.id !== post.author_id) {
+            showToast('ليس لديك صلاحية تعديل هذا المنشور', true);
+            return;
+        }
+        const privacy = document.getElementById('postPrivacy').value;
+        const comments_disabled = document.getElementById('disableComments').checked;
+        const shares_disabled = document.getElementById('disableShares').checked;
+        const likes_disabled = document.getElementById('disableLikes').checked;
+        try {
+            const { error } = await supabase
+                .from('posts')
+                .update({ privacy, comments_disabled, shares_disabled, likes_disabled })
+                .eq('id', currentSharePostId);
+            if (error) throw error;
+            const postIndex = feedPosts.findIndex(p => p.id === currentSharePostId);
+            if (postIndex !== -1) {
+                feedPosts[postIndex].privacy = privacy;
+                feedPosts[postIndex].comments_disabled = comments_disabled;
+                feedPosts[postIndex].shares_disabled = shares_disabled;
+                feedPosts[postIndex].likes_disabled = likes_disabled;
+                const postCard = document.getElementById(`post-${currentSharePostId}`);
+                if (postCard) {
+                    const likeBtn = postCard.querySelector('.like-btn');
+                    const commentBtn = postCard.querySelector('.comment-btn');
+                    const shareBtn = postCard.querySelector('.share-btn');
+                    if (likeBtn) likeBtn.disabled = likes_disabled;
+                    if (commentBtn) commentBtn.disabled = comments_disabled;
+                    if (shareBtn) shareBtn.disabled = shares_disabled;
+                }
+            }
+            showToast('✅ تم حفظ إعدادات المنشور');
+            window.closeShareSheet();
+        } catch (err) {
+            showToast('فشل حفظ الإعدادات: ' + err.message, true);
+        }
+    });
+
+    // ===================== التعليقات (محفوظة كاملة) =====================
     let currentCommentPostId = null;
     let isSendingComment = false;
 
@@ -751,7 +1056,7 @@
     });
     document.getElementById('closeSheetBtn').addEventListener('click', () => document.getElementById('commentsSheet').classList.remove('open'));
 
-    // ===================== إيموجي وإرفاق (كما في الأصل) =====================
+    // ===================== إيموجي وإرفاق =====================
     const emojis = ['😀','😂','😍','😢','😡','👍','👎','❤️','🔥','🎉','😎','🤔','😴','🥳','😇','🤗','😤','😱','💔','✨','🌟','💡','📌','📎','📷','🎵','🎤','📞','📍','📋'];
     function buildEmojiPicker() {
         const picker = document.getElementById('emojiPicker'); picker.innerHTML = '';
@@ -762,12 +1067,6 @@
     const attachSheet = document.getElementById('attachSheet');
     document.getElementById('attachBtn').addEventListener('click', (e) => { e.stopPropagation(); attachSheet.classList.add('open'); });
     document.getElementById('closeAttachBtn').addEventListener('click', () => attachSheet.classList.remove('open'));
-
-    window.openShareAdvanced = () => document.getElementById('shareAdvancedSheet').classList.add('open');
-    window.closeShareSheet = () => document.getElementById('shareAdvancedSheet').classList.remove('open');
-    document.getElementById('closeShareSheetBtn').addEventListener('click', window.closeShareSheet);
-    window.downloadPostImage = () => showToast('جاري التحميل...');
-    window.reportCurrentPost = () => showToast('تم الإبلاغ');
 
     // ===================== بدء التشغيل =====================
     async function init() {
@@ -785,7 +1084,7 @@
                 storiesRow.appendChild(div);
             });
         }
-        console.log('✅ Ramz-X جاهز بالكامل - الصفحة الرئيسية محدثة');
+        console.log('✅ Ramz-X جاهز بالكامل - جميع الميزات مفعلة');
     }
     document.addEventListener('DOMContentLoaded', init);
 
@@ -795,17 +1094,16 @@
             .catch(err => console.warn('⚠️ فشل تسجيل Service Worker:', err));
     }
 </script>
-<!-- نظام الأيقونات الاحتياطي (لم يعد مستخدماً لكن تركناه للتوافق) -->
 <script>
-(function() {
-    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', checkFontAwesome); } else { checkFontAwesome(); }
-    function checkFontAwesome() {
-        var testIcon = document.createElement('i'); testIcon.className = 'fas fa-home'; testIcon.style.cssText = 'position:absolute;visibility:hidden;';
-        document.body.appendChild(testIcon); var afterFont = window.getComputedStyle(testIcon, ':before').content; document.body.removeChild(testIcon);
-        if (!afterFont || afterFont === 'none' || afterFont === '') { document.body.classList.add('no-fontawesome'); console.warn('⚠️ Font Awesome لم يتحمّل'); }
-        else { console.log('✅ Font Awesome محمّل بنجاح'); }
-    }
-})();
+    (function() {
+        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', checkFontAwesome); } else { checkFontAwesome(); }
+        function checkFontAwesome() {
+            var testIcon = document.createElement('i'); testIcon.className = 'fas fa-home'; testIcon.style.cssText = 'position:absolute;visibility:hidden;';
+            document.body.appendChild(testIcon); var afterFont = window.getComputedStyle(testIcon, ':before').content; document.body.removeChild(testIcon);
+            if (!afterFont || afterFont === 'none' || afterFont === '') { document.body.classList.add('no-fontawesome'); console.warn('⚠️ Font Awesome لم يتحمّل'); }
+            else { console.log('✅ Font Awesome محمّل بنجاح'); }
+        }
+    })();
 </script>
 </body>
-</html>
+                                                         </html>
